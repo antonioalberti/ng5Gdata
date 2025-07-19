@@ -43,26 +43,34 @@ ng_cumulative_std = ng_cumulative_std.fillna(0)
 ng_upper_error = ng_cumulative_avg + ng_cumulative_std
 ng_lower_error = ng_cumulative_avg - ng_cumulative_std
 
+# Create subsampled indices (every 10th point)
+subsample_factor = 10
+subsample_indices = np.arange(0, len(image_numbers), subsample_factor)
+
 # Create the plot
 plt.figure(figsize=(16, 7))
 
-# Plot cumulative average with error bars for CDN
-plt.errorbar(image_numbers, cdn_cumulative_avg, 
-             yerr=[cdn_cumulative_avg - cdn_lower_error, cdn_upper_error - cdn_cumulative_avg],
+# Plot cumulative average with error bars for CDN (subsampled)
+plt.errorbar(image_numbers[subsample_indices], cdn_cumulative_avg[subsample_indices], 
+             yerr=[(cdn_cumulative_avg - cdn_lower_error)[subsample_indices], 
+                   (cdn_upper_error - cdn_cumulative_avg)[subsample_indices]],
              fmt='-o', color='blue', ecolor='lightblue',
              capsize=3, markersize=4, elinewidth=1,
              label='Baseline - Traditional CDN (Cumulative Avg)')
 
-# Plot cumulative average with error bars for NovaGenesis
-plt.errorbar(image_numbers, ng_cumulative_avg,
-             yerr=[ng_cumulative_avg - ng_lower_error, ng_upper_error - ng_cumulative_avg],
+# Plot cumulative average with error bars for NovaGenesis (subsampled)
+plt.errorbar(image_numbers[subsample_indices], ng_cumulative_avg[subsample_indices],
+             yerr=[(ng_cumulative_avg - ng_lower_error)[subsample_indices], 
+                   (ng_upper_error - ng_cumulative_avg)[subsample_indices]],
              fmt='-o', color='green', ecolor='lightgreen',
              capsize=3, markersize=4, elinewidth=1,
              label='NovaGenesis - Named Content Distribution (Cumulative Avg)')
 
-# Add instantaneous values plots with light colors
-plt.scatter(image_numbers, cdn_rate, label='Baseline - Traditional CDN (Instantaneous)', color='skyblue', alpha=0.6, s=10)
-plt.scatter(image_numbers, ng_rate, label='NovaGenesis - Named Content Distribution (Instantaneous)', color='lightgreen', alpha=0.6, s=10)
+# Add instantaneous values plots with light colors (subsampled)
+plt.scatter(image_numbers[subsample_indices], cdn_rate[subsample_indices], 
+            label='Baseline - Traditional CDN (Instantaneous)', color='skyblue', alpha=0.6, s=10)
+plt.scatter(image_numbers[subsample_indices], ng_rate[subsample_indices], 
+            label='NovaGenesis - Named Content Distribution (Instantaneous)', color='lightgreen', alpha=0.6, s=10)
 
 # Add labels and title
 plt.xlabel('.JPG file', fontsize=14) 
@@ -71,7 +79,7 @@ plt.legend(fontsize=14)
 plt.grid(True)
 plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
-plt.ylim(0.009, 0.0115)
+plt.ylim(0.0094, 0.0115)
 plt.tight_layout()
 
 # To make the plot accessible, we can save it to a file.
