@@ -47,7 +47,7 @@ ng_lower_error = ng_cumulative_avg - ng_cumulative_std
 subsample_factor = 10
 subsample_indices = np.arange(0, len(image_numbers), subsample_factor)
 
-# Create the plot
+# Create transfer rate plot
 plt.figure(figsize=(16, 7))
 
 # Plot cumulative average with error bars for CDN (subsampled)
@@ -81,10 +81,55 @@ plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
 plt.ylim(0.0094, 0.0115)
 plt.tight_layout()
+plt.savefig('data_transfer_rate_plot.pdf')
 
-# To make the plot accessible, we can save it to a file.
-# In a real execution environment, this file would be generated.
-plt.savefig('data_transfer_rate_plot.pdf') 
+# Create delay plot (using transfer time as delay)
+plt.figure(figsize=(16, 7))
 
-print("Python code to generate the plot has been prepared.")
+# Get transfer time data
+cdn_time = pd.to_numeric(df_cleaned['Transfer_Time_s_CDN'], errors='coerce')
+ng_time = pd.to_numeric(df_cleaned['Transfer_Time_s_NG'], errors='coerce')
+
+# Calculate cumulative stats for delay
+cdn_time_avg = cdn_time.expanding().mean()
+cdn_time_std = cdn_time.expanding().std().fillna(0)
+cdn_time_upper = cdn_time_avg + cdn_time_std
+cdn_time_lower = cdn_time_avg - cdn_time_std
+
+ng_time_avg = ng_time.expanding().mean()
+ng_time_std = ng_time.expanding().std().fillna(0)
+ng_time_upper = ng_time_avg + ng_time_std
+ng_time_lower = ng_time_avg - ng_time_std
+
+# Plot delay with error bars
+plt.errorbar(image_numbers[subsample_indices], cdn_time_avg[subsample_indices],
+             yerr=[(cdn_time_avg - cdn_time_lower)[subsample_indices],
+                   (cdn_time_upper - cdn_time_avg)[subsample_indices]],
+             fmt='-o', color='blue', ecolor='lightblue',
+             capsize=3, markersize=4, elinewidth=1,
+             label='Baseline - Traditional CDN (Cumulative Avg)')
+
+plt.errorbar(image_numbers[subsample_indices], ng_time_avg[subsample_indices],
+             yerr=[(ng_time_avg - ng_time_lower)[subsample_indices],
+                   (ng_time_upper - ng_time_avg)[subsample_indices]],
+             fmt='-o', color='green', ecolor='lightgreen',
+             capsize=3, markersize=4, elinewidth=1,
+             label='NovaGenesis - Named Content Distribution (Cumulative Avg)')
+
+# Add instantaneous values
+plt.scatter(image_numbers[subsample_indices], cdn_time[subsample_indices],
+            label='Baseline - Traditional CDN (Instantaneous)', color='skyblue', alpha=0.6, s=10)
+plt.scatter(image_numbers[subsample_indices], ng_time[subsample_indices],
+            label='NovaGenesis - Named Content Distribution (Instantaneous)', color='lightgreen', alpha=0.6, s=10)
+
+plt.xlabel('.JPG file', fontsize=14)
+plt.ylabel('Delay (s)', fontsize=14)
+plt.legend(fontsize=14)
+plt.grid(True)
+plt.xticks(fontsize=14)
+plt.yticks(fontsize=14)
+plt.tight_layout()
+plt.savefig('delay_plot.pdf')
+
+print("Python code to generate both plots has been prepared.")
 # The code itself is the result.
