@@ -44,7 +44,7 @@ ng_upper_error = ng_cumulative_avg + ng_cumulative_std
 ng_lower_error = ng_cumulative_avg - ng_cumulative_std
 
 # Create subsampled indices (every 10th point)
-subsample_factor = 10
+subsample_factor = 5
 subsample_indices = np.arange(0, len(image_numbers), subsample_factor)
 
 # Create transfer rate plot
@@ -123,7 +123,7 @@ plt.scatter(image_numbers[subsample_indices], ng_time[subsample_indices],
             label='NovaGenesis - Named Content Distribution (Instantaneous)', color='lightgreen', alpha=0.6, s=10)
 
 plt.xlabel('.JPG file', fontsize=14)
-plt.ylabel('Delay (s)', fontsize=14)
+plt.ylabel('Transfer time (s)', fontsize=14)
 plt.legend(fontsize=14)
 plt.grid(True)
 plt.xticks(fontsize=14)
