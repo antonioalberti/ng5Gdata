@@ -46,16 +46,22 @@ ng_lower_error = ng_cumulative_avg - ng_cumulative_std
 # Create the plot
 plt.figure(figsize=(16, 7))
 
-# Plot cumulative average for CDN
-plt.plot(image_numbers, cdn_cumulative_avg, label='Baseline - Traditional CDN (Cumulative Avg)', color='blue')
-plt.fill_between(image_numbers, cdn_lower_error, cdn_upper_error, color='blue', alpha=0.2, label='Baseline - Traditional CDN (Error Margin)')
+# Plot cumulative average with error bars for CDN
+plt.errorbar(image_numbers, cdn_cumulative_avg, 
+             yerr=[cdn_cumulative_avg - cdn_lower_error, cdn_upper_error - cdn_cumulative_avg],
+             fmt='-o', color='blue', ecolor='lightblue',
+             capsize=3, markersize=4, elinewidth=1,
+             label='Baseline - Traditional CDN (Cumulative Avg)')
 
-# Plot cumulative average for NovaGenesis
-plt.plot(image_numbers, ng_cumulative_avg, label='NovaGenesis - Named Content Distribution (Cumulative Avg)', color='green')
-plt.fill_between(image_numbers, ng_lower_error, ng_upper_error, color='green', alpha=0.2, label='NovaGenesis - Named Content Distribution (Error Margin)')
+# Plot cumulative average with error bars for NovaGenesis
+plt.errorbar(image_numbers, ng_cumulative_avg,
+             yerr=[ng_cumulative_avg - ng_lower_error, ng_upper_error - ng_cumulative_avg],
+             fmt='-o', color='green', ecolor='lightgreen',
+             capsize=3, markersize=4, elinewidth=1,
+             label='NovaGenesis - Named Content Distribution (Cumulative Avg)')
 
 # Add instantaneous values plots with light colors
-plt.scatter(image_numbers, cdn_rate, label='Baseline - Traditional CDN (Instantaneous)', color='skyblue', alpha=0.6, s=10) # s is marker size
+plt.scatter(image_numbers, cdn_rate, label='Baseline - Traditional CDN (Instantaneous)', color='skyblue', alpha=0.6, s=10)
 plt.scatter(image_numbers, ng_rate, label='NovaGenesis - Named Content Distribution (Instantaneous)', color='lightgreen', alpha=0.6, s=10)
 
 # Add labels and title
