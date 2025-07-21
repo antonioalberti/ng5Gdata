@@ -2,8 +2,8 @@ import json
 from datetime import datetime
 import argparse
 
-def filter_relevant_messages(input_file='extracted_data.json', output_file='relevant.json', max_duration=None):
-    substrings = ["ng -notify", "ng -p", "ng -d"]
+def filter_relevant_messages(input_file='extracted_data.json', output_file='relevant.json', begin_interval=None, end_interval=None):
+    substrings = ["ng -notify", "ng -p", "ng -d", "ng -s"]
     relevant_objs = []
     with open(input_file, 'r', encoding='utf-8') as in_fp:
         for line in in_fp:
@@ -32,7 +32,9 @@ def filter_relevant_messages(input_file='extracted_data.json', output_file='rele
                 current_time = datetime.fromisoformat(obj.get("time"))
                 if reference_time is not None:
                     delta = (current_time - reference_time).total_seconds()
-                    if max_duration is not None and delta > max_duration:
+                    if begin_interval is not None and delta < begin_interval:
+                        continue
+                    if end_interval is not None and delta > end_interval:
                         break
                     obj["time"] = delta
                 else:
@@ -45,10 +47,10 @@ def main():
     parser = argparse.ArgumentParser(description='Filter relevant messages and adjust time relative to first sample.')
     parser.add_argument('--input_file', type=str, default='extracted_data.json', help='Input JSON lines file')
     parser.add_argument('--output_file', type=str, default='relevant.json', help='Output JSON lines file')
-    parser.add_argument('--max_duration', type=float, default=None, help='Maximum duration in seconds to include in output')
+    parser.add_argument('--begin_interval', type=float, default=None, help='Start of time interval in seconds to include in output')
+    parser.add_argument('--end_interval', type=float, default=None, help='End of time interval in seconds to include in output')
     args = parser.parse_args()
 
-    filter_relevant_messages(input_file=args.input_file, output_file=args.output_file, max_duration=args.max_duration)
-
+    filter_relevant_messages(input_file=args.input_file, output_file=args.output_file, begin_interval=args.begin_interval, end_interval=args.end_interval)
 if __name__ == '__main__':
     main()
