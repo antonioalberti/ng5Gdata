@@ -18,9 +18,8 @@ def plot_events(input_file='relevant.json', output_file='events_plot.pdf'):
                 dst_mac = obj.get("dst_mac", "")
                 commands = command_pattern.findall(data)
                 for cmd in commands:
-                    # Combine command and MAC address for category
-                    # Using src_mac here; could also consider dst_mac or both
-                    category = f"{cmd} | {src_mac}"
+                    # Use only command as category for Y axis
+                    category = cmd
                     events.append((time, category))
             except Exception:
                 continue
@@ -39,25 +38,37 @@ def plot_events(input_file='relevant.json', output_file='events_plot.pdf'):
 
     import matplotlib.colors as mcolors
 
-    plt.figure(figsize=(12, 8))
+    plt.figure(figsize=(16, 7))
 
-    # Extract unique MAC addresses for color mapping
-    mac_addresses = sorted(set(cat.split(' | ')[1] for cat in unique_categories))
+    # Since MAC is no longer in category, extract MACs from events list for color mapping
+    mac_addresses = sorted(set(obj.get("src_mac", "") for obj in [json.loads(line) for line in open(input_file, 'r', encoding='utf-8')]))
     colors = list(mcolors.TABLEAU_COLORS.values())
     color_map = {mac: colors[i % len(colors)] for i, mac in enumerate(mac_addresses)}
 
     # Prepare colors for each event based on MAC address
-    event_colors = [color_map[cat.split(' | ')[1]] for cat in unique_categories]
-    # Map each event's MAC to color
-    colors_for_points = [color_map[cat.split(' | ')[1]] for cat in y]
+    # We need to get MAC for each event in order
+    macs_for_points = []
+    with open(input_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            try:
+                obj = json.loads(line)
+                data = obj.get("data", "")
+                commands = command_pattern.findall(data)
+                for _ in commands:
+                    macs_for_points.append(obj.get("src_mac", ""))
+            except Exception:
+                macs_for_points.append("")
+
+    # Map MACs to colors for plotting points
+    colors_for_points = [color_map.get(mac, 'black') for mac in macs_for_points]
 
     # Plot with squares instead of circles, colored by MAC
     plt.scatter(x, y, marker='s', c=colors_for_points)
 
     plt.yticks(range(len(unique_categories)), unique_categories)
     plt.xlabel('Time (seconds)')
-    plt.ylabel('Command | MAC Address')
-    plt.title('Events over Time by Command and MAC')
+    plt.ylabel('Command')
+    plt.title('Events over Time by Command (colored by MAC)')
     plt.grid(True, axis='x')
 
     plt.tight_layout()
