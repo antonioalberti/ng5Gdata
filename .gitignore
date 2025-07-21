@@ -1,0 +1,6 @@
+# Ignore pcap files
+*.pcap
+*.pcapng
+
+# Ignore JSON files
+*.json
