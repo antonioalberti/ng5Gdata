@@ -24,11 +24,13 @@ def is_icmp(packet):
     return ip_proto == 1
 
 
+# Global substrings list to be used throughout the program
+SUBSTRINGS = ["ng -notify", "ng -p", "ng -d", "ng -s"]
+
 def main():
     import datetime
     import json
     filename = 'ORIGINAL.pcapng'
-    substrings = ["ng -notify", "ng -p", "ng -d"]
     output_file = 'extracted_data.json'
 
     def mac_addr(mac_bytes):
@@ -103,7 +105,7 @@ def main():
                 try:
                     data_str = data.decode(errors='ignore')
                     # Apply filter on the extracted data string
-                    if not packet_contains_data(data_str.encode(), substrings):
+                    if not packet_contains_data(data_str.encode(), SUBSTRINGS):
                         continue
                     # Show match and time before saving
                     #print("MATCH FOUND:")
@@ -139,13 +141,12 @@ def main():
 
 def filter_relevant_messages(input_file='extracted_data.json', output_file='relevant.json'):
     import json
-    substrings = ["ng -notify", "ng -p", "ng -d"]
     with open(input_file, 'r', encoding='utf-8') as in_fp, open(output_file, 'w', encoding='utf-8') as out_fp:
         for line in in_fp:
             try:
                 obj = json.loads(line)
                 data_str = obj.get("data", "")
-                if any(sub in data_str for sub in substrings):
+                if any(sub in data_str for sub in SUBSTRINGS):
                     out_fp.write(json.dumps(obj, ensure_ascii=False) + '\n')
             except Exception:
                 continue
