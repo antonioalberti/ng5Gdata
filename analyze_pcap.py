@@ -28,7 +28,7 @@ def main():
     import datetime
     import json
     filename = 'ORIGINAL.pcapng'
-    substrings = ["ng -notify", "ng -p", "> ]\n", "ng -d"]
+    substrings = ["ng -notify", "ng -p", "ng -d"]
     output_file = 'extracted_data.json'
 
     def mac_addr(mac_bytes):
@@ -38,7 +38,11 @@ def main():
         # Remove control characters and other non-printable characters that may corrupt JSON
         return ''.join(c for c in s if c.isprintable())
 
-    with open(filename, 'rb') as fp, open(output_file, 'a', encoding='utf-8') as out_fp:
+    first_timestamp = None
+    norm_time = None
+    first_written = False
+
+    with open(filename, 'rb') as fp, open(output_file, 'w', encoding='utf-8') as out_fp:
         scanner = FileScanner(fp)
         for block in scanner:
             if hasattr(block, 'packet_data'):
@@ -54,14 +58,16 @@ def main():
                     timestamp = (block.timestamp_high << 32) + block.timestamp_low
                     # Convert to seconds float
                     timestamp = timestamp / 1_000_000
-                # Format timestamp to human-readable string if available
+                # Normalize time to first sample
                 if timestamp is not None:
-                    try:
-                        timestamp_str = datetime.datetime.fromtimestamp(timestamp).isoformat()
-                    except Exception:
-                        timestamp_str = str(timestamp)
+                    if first_timestamp is None and not first_written:
+                        first_timestamp = timestamp
+                        norm_time = 0.0
+                        first_written = True
+                    else:
+                        norm_time = float(timestamp - first_timestamp)
                 else:
-                    timestamp_str = 'N/A'
+                    norm_time = None
                 # Extract source and destination MAC addresses from Ethernet header
                 if len(packet) < 14:
                     continue
@@ -71,12 +77,6 @@ def main():
                 dst_mac_str = mac_addr(dst_mac)
 
                 # Extract only the data part (payload)
-                # Assuming data part means the packet payload after headers
-                # Let's try to extract payload from IP packet
-                # Ethernet header: 14 bytes
-                # IP header length: variable, but minimum 20 bytes
-                # TCP/UDP header length: variable
-                # We'll try to parse IP header length and TCP header length to get payload
                 eth_header_len = 14
                 if len(packet) < eth_header_len + 20:
                     continue
@@ -105,11 +105,18 @@ def main():
                     # Apply filter on the extracted data string
                     if not packet_contains_data(data_str.encode(), substrings):
                         continue
-                    # Remove everything before "ng -m --cl 0.1 ["
-                    marker = "ng -m --cl 0.1 ["
-                    idx = data_str.find(marker)
-                    if idx != -1:
-                        data_str = data_str[idx:]
+                    # Show match and time before saving
+                    #print("MATCH FOUND:")
+                    #print("Normalized time:", norm_time if norm_time is not None else None)
+                    #print("Data:", data_str[:200] + ("..." if len(data_str) > 200 else ""))
+                    #input("Press Enter to continue...")
+                    # Remove everything before the first "ng -" (any command)
+                    import re
+                    match = re.search(r'ng\s+-[a-zA-Z0-9_-]+', data_str)
+                    if match:
+                        data_str = data_str[match.start():]
+                    else:
+                        data_str = data_str.lstrip(' \r\n\t\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x7f')
                     # Remove non-printable characters from the start of the string
                     data_str = data_str.lstrip(' \r\n\t\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x7f')
 
@@ -118,7 +125,7 @@ def main():
 
                     # Prepare JSON object
                     json_obj = {
-                        "time": timestamp_str,
+                        "time": norm_time if norm_time is not None else None,  # normalized time (first sample = 0)
                         "src_mac": src_mac_str,
                         "dst_mac": dst_mac_str,
                         "data": data_str_clean

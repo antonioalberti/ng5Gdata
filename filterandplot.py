@@ -3,14 +3,20 @@ from datetime import datetime
 import argparse
 
 def filter_relevant_messages(input_file='extracted_data.json', output_file='relevant.json', begin_interval=None, end_interval=None):
-    substrings = ["ng -notify", "ng -p", "ng -d", "ng -s"]
+    substrings = ["ng -notify", "ng -p", "ng -d"]
     relevant_objs = []
     with open(input_file, 'r', encoding='utf-8') as in_fp:
         for line in in_fp:
             try:
                 obj = json.loads(line)
                 data_str = obj.get("data", "")
-                if any(sub in data_str for sub in substrings):
+                # Show the line and filtering decision
+                print("Analyzing line:")
+                print(line.strip())
+                decision = any(sub in data_str for sub in substrings)
+                print("Will be filtered (included)?", decision)
+                input("Press Enter to continue...")
+                if decision:
                     relevant_objs.append(obj)
             except Exception:
                 continue
