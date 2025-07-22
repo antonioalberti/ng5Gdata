@@ -25,7 +25,7 @@ def is_icmp(packet):
 
 
 # Global substrings list to be used throughout the program
-SUBSTRINGS = ["ng -notify", "ng -p", "ng -d", "ng -s"]
+SUBSTRINGS = ["ng -m --cl ", "ng -notify ", "ng -p ", "ng -d ", "ng -s "]
 
 def main():
     import datetime

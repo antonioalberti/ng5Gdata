@@ -3,4 +3,4 @@
 *.pcapng
 
 # Ignore JSON files
-*.json
+#*.json
