@@ -104,50 +104,8 @@ def parse_records(json_file):
 
 def plot_pid_vs_command(records, commands):
     """
-    Plots two timeline bar charts:
-    1. For each S_PID from the "ng -m" command block.
-    2. For each D_PID from other "ng -X" commands, showing bars for each command occurrence.
+    Plots a timeline bar chart for each D_PID from other "ng -X" commands, showing bars for each command occurrence.
     """
-    # Plot for S_PID as before
-    filtered_records = [rec for rec in records if rec.get('s_pid')]
-
-    print(f"Filtered records count (with s_pid): {len(filtered_records)}")
-
-    spid_times = {}
-    for rec in filtered_records:
-        s_pid = rec.get('s_pid')
-        time = rec.get('time')
-        if not s_pid or not time:
-            continue
-        if s_pid not in spid_times:
-            spid_times[s_pid] = []
-        spid_times[s_pid].append(time)
-
-    print(f"S_PID keys: {list(spid_times.keys())}")
-
-    s_pids = sorted(spid_times.keys())
-    y_labels_spid = s_pids
-    y_positions_spid = {s_pid: idx for idx, s_pid in enumerate(s_pids)}
-
-    # Plot bars for S_PID
-    fig1, ax1 = plt.subplots(figsize=(14, max(6, len(y_labels_spid)*0.5)))
-    bar_width = 0.1
-
-    for s_pid, times in spid_times.items():
-        y = y_positions_spid[s_pid]
-        for t in times:
-            ax1.barh(y, bar_width, left=t, height=0.8, color='blue', edgecolor='black', alpha=0.7)
-
-    ax1.set_yticks(range(len(y_labels_spid)))
-    ax1.set_yticklabels(y_labels_spid)
-    ax1.set_xlabel('Time (s)')
-    ax1.set_title('NovaGenesis: Timeline of S_PID')
-
-    plt.tight_layout()
-    plt.savefig('plot_s_pid_timeline.pdf')
-    plt.close(fig1)
-
-    # Now plot for D_PID and commands from other_cmds
     # Collect all other_cmds from records
     other_cmd_records = []
     for rec in records:
@@ -196,7 +154,7 @@ def plot_pid_vs_command(records, commands):
         y = y_positions_dpid[(d_pid, command)]
         color = command_colors.get(command, 'gray')
         for t in times:
-            ax2.barh(y, bar_width, left=t, height=0.8, color=color, edgecolor='black', alpha=0.7)
+            ax2.barh(y, bar_width, left=t, height=0.8, color=color, edgecolor=color, alpha=0.7)
 
     ax2.set_yticks(range(len(y_labels_dpid)))
     ax2.set_yticklabels(y_labels_dpid)
@@ -210,6 +168,7 @@ def plot_pid_vs_command(records, commands):
     plt.tight_layout()
     plt.savefig('plot_d_pid_commands_timeline.pdf')
     plt.close(fig2)
+    
 def main():
     parser = argparse.ArgumentParser(
         description='Plots a graph of NovaGenesis messages from a JSON file.'
