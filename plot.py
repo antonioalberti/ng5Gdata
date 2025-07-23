@@ -16,16 +16,15 @@ df.columns = ['Image', 'Size_Bytes_CDN', 'Data_Transfer_Rate_KB_s_CDN', 'Transfe
 
 # Select relevant columns and clean them
 # Ensure data is numeric, coercing errors to NaN and then filling them if necessary (though not expected here)
-cdn_rate = pd.to_numeric(df['Data_Transfer_Rate_KB_s_CDN'].str.replace(',', ''), errors='coerce') / (1024 * 1024)
-ng_rate = pd.to_numeric(df['Data_Transfer_Rate_KB_s_NG'].str.replace(',', ''), errors='coerce') / (1024 * 1024)
+cdn_rate = pd.to_numeric(df['Data_Transfer_Rate_KB_s_CDN'].str.replace(',', ''), errors='coerce') / (1024)
+ng_rate = pd.to_numeric(df['Data_Transfer_Rate_KB_s_NG'].str.replace(',', ''), errors='coerce') / (1024)
 image_numbers = df['Image']
 
 # Drop rows where rates might be NaN after coercion, if any
 df_cleaned = df.dropna(subset=['Data_Transfer_Rate_KB_s_CDN', 'Data_Transfer_Rate_KB_s_NG'])
-cdn_rate = pd.to_numeric(df_cleaned['Data_Transfer_Rate_KB_s_CDN'].str.replace(',', ''), errors='coerce') / (1024 * 1024)
-ng_rate = pd.to_numeric(df_cleaned['Data_Transfer_Rate_KB_s_NG'].str.replace(',', ''), errors='coerce') / (1024 * 1024)
+cdn_rate = pd.to_numeric(df_cleaned['Data_Transfer_Rate_KB_s_CDN'].str.replace(',', ''), errors='coerce') / (1024)
+ng_rate = pd.to_numeric(df_cleaned['Data_Transfer_Rate_KB_s_NG'].str.replace(',', ''), errors='coerce') / (1024)
 image_numbers = df_cleaned['Image']
-
 
 # Calculate cumulative average and standard deviation
 # Use .expanding() for cumulative calculations
@@ -74,12 +73,12 @@ plt.scatter(image_numbers[subsample_indices], ng_rate[subsample_indices],
 
 # Add labels and title
 plt.xlabel('.JPG file', fontsize=14) 
-plt.ylabel('Data Transfer Rate (MB/s)', fontsize=14)
+plt.ylabel('Data Transfer Rate (KB/s)', fontsize=14)
 plt.legend(fontsize=14)
 plt.grid(True)
 plt.xticks(fontsize=14)
 plt.yticks(fontsize=14)
-plt.ylim(0.0094, 0.0115)
+plt.ylim(9, 11.5)
 plt.tight_layout()
 plt.savefig('data_transfer_rate_plot.pdf')
 
