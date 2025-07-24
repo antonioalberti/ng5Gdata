@@ -123,4 +123,22 @@ Ensure `data.csv` is present in the same directory.
 
 ---
 
+## Setup Virtual Environment and Install Dependencies
+
+To set up the Python virtual environment and install the required packages, run the following shell script:
+
+```bash
+bash setup_venv.sh
+```
+
+This script will:
+- Create a new virtual environment in the `.venv` directory.
+- Activate the virtual environment.
+- Upgrade `pip` to the latest version.
+- Install all required packages listed in `requirements.txt`.
+
+Make sure you have Python 3 installed on your system.
+
+---
+
 For any questions or issues, please refer to the source code comments or contact the project maintainer.

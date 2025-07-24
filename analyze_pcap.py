@@ -1,6 +1,46 @@
 import sys
-from pcapng import FileScanner
 import socket
+import pcapng
+
+class FileScanner:
+    def __init__(self, fp):
+        self.fp = fp
+        self._blocks = self._read_blocks()
+
+    def _read_blocks(self):
+        # This is a simplified generator to yield blocks from the pcapng file
+        # For full implementation, use a proper pcapng parser library
+        while True:
+            block_header = self.fp.read(8)
+            if len(block_header) < 8:
+                break
+            block_type = int.from_bytes(block_header[0:4], byteorder='little')
+            block_total_length = int.from_bytes(block_header[4:8], byteorder='little')
+            block_body = self.fp.read(block_total_length - 12)
+            block_footer = self.fp.read(4)
+            if len(block_body) + len(block_footer) != block_total_length - 8:
+                break
+            yield Block(block_type, block_body)
+
+    def __iter__(self):
+        return self._blocks
+
+class Block:
+    def __init__(self, block_type, body):
+        self.block_type = block_type
+        self.body = body
+        # For simplicity, we will mock packet_data and timestamp attributes
+        # In a real parser, parse the body according to block_type
+        self.packet_data = None
+        self.timestamp = None
+        if block_type == 0x00000006:  # Enhanced Packet Block
+            # Parse timestamp and packet data from body
+            self.timestamp = int.from_bytes(body[0:8], byteorder='little') / 1_000_000
+            self.packet_data = body[8:]
+        elif block_type == 0x00000003:  # Simple Packet Block
+            self.packet_data = body
+            self.timestamp = None
+
 
 def packet_contains_data(data, substrings):
     data_str = data.decode(errors='ignore')
@@ -25,7 +65,7 @@ def is_icmp(packet):
 
 
 # Global substrings list to be used throughout the program
-SUBSTRINGS = ["ng -m --cl ", "ng -notify ", "ng -p ", "ng -d ", "ng -s "]
+SUBSTRINGS = ["ng -m --cl ", "ng -notify ", "ng -p ", "ng -d ", "ng -s ", "Client", "Server"]
 
 def main():
     import datetime
@@ -49,6 +89,8 @@ def main():
         for block in scanner:
             if hasattr(block, 'packet_data'):
                 packet = block.packet_data
+                if packet is None:
+                    continue
                 if is_icmp(packet):
                     continue
                 # Extract timestamp from block if available
@@ -133,8 +175,9 @@ def main():
                         "data": data_str_clean
                     }
 
-                    # Write JSON object as a single line
-                    out_fp.write(json.dumps(json_obj, ensure_ascii=False) + '\n')
+                    # Only write JSON object if data starts with "ng -m --cl 0.1 ["
+                    if data_str_clean.startswith("ng -m --cl 0.1 ["):
+                        out_fp.write(json.dumps(json_obj, ensure_ascii=False) + '\n')
                 except Exception:
                     # If decoding fails, skip
                     continue
