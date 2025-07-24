@@ -68,16 +68,23 @@ def parse_records(json_file):
                 other_records = []
                 for cmd, block in other_cmd_blocks:
                     print(f"  Found other command: ng -{cmd} (recording occurrence only)")
-                    # Associate this command occurrence with the D_PID extracted from ng -m block
+                    label = None
+                    if cmd == 'info':
+                        # Extract the string inside angle brackets <> in the block for label
+                        angle_contents = re.findall(r'<\s*[^>]*?\s*([^ >]+)\s*>', block)
+                        if angle_contents:
+                            label = angle_contents[-1]  # Take last string inside angle brackets as label
                     if d_pid:
-                        other_records.append({
+                        rec_entry = {
                             'time': time,
                             'command': cmd,
                             'd_pid': d_pid
-                        })
+                        }
+                        if label:
+                            rec_entry['label'] = label
+                        other_records.append(rec_entry)
                     else:
                         print(f"    Warning: No D_PID available from ng -m block to associate with command ng -{cmd}")
-
 
                 # Append the ng -m record as well
                 records.append({
@@ -124,7 +131,7 @@ def plot_pid_vs_command(records, commands):
         key = (d_pid, command)
         if key not in dpid_command_times:
             dpid_command_times[key] = []
-        dpid_command_times[key].append(time)
+        dpid_command_times[key].append((time, rec.get('label')))
 
     print(f"D_PID-command keys: {list(dpid_command_times.keys())}")
 
@@ -148,13 +155,19 @@ def plot_pid_vs_command(records, commands):
 
     # Plot bars for D_PID-command
     fig2, ax2 = plt.subplots(figsize=(14, max(6, len(y_labels_dpid)*0.5)))
-    bar_width = 0.1
+    bar_width = 0.3  # Increased bar width for better visibility
 
-    for (d_pid, command), times in dpid_command_times.items():
+    for (d_pid, command), time_label_list in dpid_command_times.items():
         y = y_positions_dpid[(d_pid, command)]
         color = command_colors.get(command, 'gray')
-        for t in times:
+
+        # Log all bars to be plotted with spacing for readability
+        print(f"\nBars for D_PID: {d_pid}, Command: {command}")
+        for t, label in time_label_list:
+            print(f"  Time: {t}")
             ax2.barh(y, bar_width, left=t, height=0.8, color=color, edgecolor=color, alpha=0.7)
+            if command == 'info' and label:
+                ax2.text(t + bar_width - 1, y, label, va='center', ha='right', fontsize=8, color=color)
 
     ax2.set_yticks(range(len(y_labels_dpid)))
     ax2.set_yticklabels(y_labels_dpid)
@@ -163,20 +176,37 @@ def plot_pid_vs_command(records, commands):
 
     # Create legend for commands
     legend_elements = [Line2D([0], [0], color=command_colors[cmd], lw=4, label=cmd) for cmd in commands]
-    ax2.legend(handles=legend_elements, title='Commands')
+    ax2.legend(handles=legend_elements, title='NovaGenesis actions')
 
     plt.tight_layout()
     plt.savefig('plot_d_pid_commands_timeline.pdf')
     plt.close(fig2)
-    
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Plots a graph of NovaGenesis messages from a JSON file.'
     )
     parser.add_argument('json_file', help='Path to the JSON file (one message per line)')
+    parser.add_argument('--start-time', type=float, default=None, help='Start time for X-axis (inclusive)')
+    parser.add_argument('--end-time', type=float, default=None, help='End time for X-axis (inclusive)')
     args = parser.parse_args()
 
     records = parse_records(args.json_file)
+
+    # Filter records by start and end time if specified
+    if args.start_time is not None or args.end_time is not None:
+        filtered_records = []
+        for rec in records:
+            time = rec.get('time')
+            if time is None:
+                continue
+            if args.start_time is not None and time < args.start_time:
+                continue
+            if args.end_time is not None and time > args.end_time:
+                continue
+            filtered_records.append(rec)
+        records = filtered_records
 
     # Extract unique commands from records for plotting
     commands = []
