@@ -22467,67 +22467,174 @@ Processing line 2025: time=5840.0317804813385, data=ng -m --cl 0.1 [ < 1 s 15B23
   Found other command: ng -scn (recording occurrence only)
   Found other command: ng -scn (recording occurrence only)
  
-Total other command records: 48
-D_PID-command keys: [('C2DFBCBE', 'd'), ('C2DFBCBE', 'scn'), ('C2DFBCBE', 'notify'), ('C2DFBCBE', 'info'), ('483F1236', 'p'), ('483F1236', 'info'), ('483F1236', 'scn')]
-
-Bars for D_PID: C2DFBCBE, Command: d
-  Time: 5340.023748874664
-  Time: 5340.023748874664
-  Time: 5340.023748874664
-  Time: 5340.023748874664
-  Time: 5340.023748874664
-  Time: 5340.023748874664
-  Time: 5340.023748874664
-  Time: 5340.0237584114075
-  Time: 5340.0237584114075
-  Time: 5340.0237584114075
-  Time: 5340.0237584114075
-  Time: 5340.0237584114075
-  Time: 5380.026916742325
-  Time: 5380.026916742325
-  Time: 5380.026916742325
-  Time: 5380.026916742325
-  Time: 5380.026916742325
-  Time: 5380.026916742325
-  Time: 5380.026916742325
-  Time: 5380.026926994324
-  Time: 5380.026926994324
-  Time: 5380.026926994324
-  Time: 5380.026926994324
-  Time: 5380.026926994324
-  Time: 5380.026926994324
-  Time: 5392.780885219574
-  Time: 5392.780885219574
-  Time: 5392.780885219574
-
-Bars for D_PID: C2DFBCBE, Command: scn
-  Time: 5340.023748874664
-  Time: 5340.023748874664
-  Time: 5340.0237584114075
-  Time: 5340.0237584114075
-  Time: 5380.026916742325
-  Time: 5380.026916742325
-  Time: 5380.026926994324
-  Time: 5380.026926994324
-  Time: 5392.232709646225
-  Time: 5392.780885219574
-  Time: 5392.780885219574
+Total other command records: 160
+D_PID-command keys: [('C2DFBCBE', 'notify'), ('C2DFBCBE', 'scn'), ('C2DFBCBE', 'd'), ('C2DFBCBE', 'info')]
+Min time: 5675.035663127899, Max time: 5675.1288595199585
 
 Bars for D_PID: C2DFBCBE, Command: notify
-  Time: 5392.232709646225
+  Time: 5675.0357
+  Time: 5675.0383
+  Time: 5675.0395
+  Time: 5675.0422
+  Time: 5675.0635
+  Time: 5675.0635
+  Time: 5675.0647
+  Time: 5675.0677
+  Time: 5675.0702
+  Time: 5675.0728
+  Time: 5675.0740
+  Time: 5675.0755
+  Time: 5675.0793
+  Time: 5675.0794
+  Time: 5675.0817
+  Time: 5675.0817
+  Time: 5675.0849
+  Time: 5675.0849
+  Time: 5675.0849
+  Time: 5675.0849
+
+Bars for D_PID: C2DFBCBE, Command: scn
+  Time: 5675.0357
+  Time: 5675.0383
+  Time: 5675.0395
+  Time: 5675.0422
+  Time: 5675.0635
+  Time: 5675.0635
+  Time: 5675.0647
+  Time: 5675.0677
+  Time: 5675.0702
+  Time: 5675.0728
+  Time: 5675.0740
+  Time: 5675.0755
+  Time: 5675.0793
+  Time: 5675.0794
+  Time: 5675.0817
+  Time: 5675.0817
+  Time: 5675.0849
+  Time: 5675.0849
+  Time: 5675.0849
+  Time: 5675.0849
+  Time: 5675.0864
+  Time: 5675.0864
+  Time: 5675.0944
+  Time: 5675.0944
+  Time: 5675.0958
+  Time: 5675.0958
+  Time: 5675.0984
+  Time: 5675.0984
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1025
+  Time: 5675.1025
+  Time: 5675.1051
+  Time: 5675.1051
+  Time: 5675.1078
+  Time: 5675.1078
+  Time: 5675.1091
+  Time: 5675.1091
+  Time: 5675.1105
+  Time: 5675.1105
+  Time: 5675.1119
+  Time: 5675.1119
+  Time: 5675.1156
+  Time: 5675.1156
+  Time: 5675.1171
+  Time: 5675.1171
+  Time: 5675.1184
+  Time: 5675.1184
+  Time: 5675.1199
+  Time: 5675.1199
+  Time: 5675.1213
+  Time: 5675.1213
+  Time: 5675.1225
+  Time: 5675.1225
+  Time: 5675.1276
+  Time: 5675.1276
+  Time: 5675.1289
+  Time: 5675.1289
+
+Bars for D_PID: C2DFBCBE, Command: d
+  Time: 5675.0864
+  Time: 5675.0864
+  Time: 5675.0864
+  Time: 5675.0944
+  Time: 5675.0944
+  Time: 5675.0944
+  Time: 5675.0958
+  Time: 5675.0958
+  Time: 5675.0958
+  Time: 5675.0984
+  Time: 5675.0984
+  Time: 5675.0984
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1025
+  Time: 5675.1025
+  Time: 5675.1025
+  Time: 5675.1051
+  Time: 5675.1051
+  Time: 5675.1051
+  Time: 5675.1078
+  Time: 5675.1078
+  Time: 5675.1078
+  Time: 5675.1091
+  Time: 5675.1091
+  Time: 5675.1091
+  Time: 5675.1105
+  Time: 5675.1105
+  Time: 5675.1105
+  Time: 5675.1119
+  Time: 5675.1119
+  Time: 5675.1119
+  Time: 5675.1156
+  Time: 5675.1156
+  Time: 5675.1156
+  Time: 5675.1171
+  Time: 5675.1171
+  Time: 5675.1171
+  Time: 5675.1184
+  Time: 5675.1184
+  Time: 5675.1184
+  Time: 5675.1199
+  Time: 5675.1199
+  Time: 5675.1199
+  Time: 5675.1213
+  Time: 5675.1213
+  Time: 5675.1213
+  Time: 5675.1225
+  Time: 5675.1225
+  Time: 5675.1225
+  Time: 5675.1276
+  Time: 5675.1276
+  Time: 5675.1276
+  Time: 5675.1289
+  Time: 5675.1289
+  Time: 5675.1289
 
 Bars for D_PID: C2DFBCBE, Command: info
-  Time: 5392.780885219574
-
-Bars for D_PID: 483F1236, Command: p
-  Time: 5392.784049034119
-  Time: 5392.784049034119
-  Time: 5392.784049034119
-  Time: 5392.784049034119
-  Time: 5392.784049034119
-
-Bars for D_PID: 483F1236, Command: info
-  Time: 5392.784049034119
-
-Bars for D_PID: 483F1236, Command: scn
-  Time: 5392.784049034119
+  Time: 5675.0864
+  Time: 5675.0944
+  Time: 5675.0958
+  Time: 5675.0984
+  Time: 5675.1012
+  Time: 5675.1012
+  Time: 5675.1025
+  Time: 5675.1051
+  Time: 5675.1078
+  Time: 5675.1091
+  Time: 5675.1105
+  Time: 5675.1119
+  Time: 5675.1156
+  Time: 5675.1171
+  Time: 5675.1184
+  Time: 5675.1199
+  Time: 5675.1213
+  Time: 5675.1225
+  Time: 5675.1276
+  Time: 5675.1289

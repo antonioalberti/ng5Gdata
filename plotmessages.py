@@ -109,7 +109,7 @@ def parse_records(json_file):
     return records
 
 
-def plot_pid_vs_command(records, commands):
+def plot_pid_vs_command(records, commands, start_time=None, end_time=None):
     """
     Plots a timeline bar chart for each D_PID from other "ng -X" commands, showing bars for each command occurrence.
     """
@@ -155,7 +155,18 @@ def plot_pid_vs_command(records, commands):
 
     # Plot bars for D_PID-command
     fig2, ax2 = plt.subplots(figsize=(14, max(6, len(y_labels_dpid)*0.5)))
-    bar_width = 0.3  # Increased bar width for better visibility
+    bar_width = 0.05  # Make bars narrower on the X axis
+
+    # Determine min and max time for X-axis limits
+    all_times = [t for times in dpid_command_times.values() for t, _ in times]
+    if all_times:
+        # Use start_time and end_time from parameters if provided, else fallback to min/max times
+        min_time = start_time if start_time is not None else min(all_times)
+        max_time = end_time if end_time is not None else max(all_times)
+        print(f"Min time: {min_time}, Max time: {max_time}")
+        ax2.set_xlim(min_time, max_time)  # Use exact limits from parameters or data
+    else:
+        print("No times found for plotting.")
 
     for (d_pid, command), time_label_list in dpid_command_times.items():
         y = y_positions_dpid[(d_pid, command)]
@@ -164,21 +175,32 @@ def plot_pid_vs_command(records, commands):
         # Log all bars to be plotted with spacing for readability
         print(f"\nBars for D_PID: {d_pid}, Command: {command}")
         for t, label in time_label_list:
-            print(f"  Time: {t}")
-            ax2.barh(y, bar_width, left=t, height=0.8, color=color, edgecolor=color, alpha=0.7)
+            print(f"  Time: {t:.4f}")
+            ax2.barh(y, bar_width, left=t, height=0.6, color=color, edgecolor=color, alpha=0.7)
             if command == 'info' and label:
-                ax2.text(t + bar_width - 1, y, label, va='center', ha='right', fontsize=8, color=color)
+                ax2.text(
+                    round(t + bar_width - 0.5, 4),
+                    y,
+                    label,
+                    va='bottom',
+                    ha='center',
+                    rotation=90,
+                    fontsize=8,
+                    color=color,
+                    bbox=dict(facecolor='white', edgecolor='none', pad=1.5, alpha=0.8)
+                )
 
     ax2.set_yticks(range(len(y_labels_dpid)))
     ax2.set_yticklabels(y_labels_dpid)
     ax2.set_xlabel('Time (s)')
-    ax2.set_title('NovaGenesis: Timeline of D_PID and Commands')
+    #ax2.set_title('NovaGenesis: Timeline of D_PID and Commands')
 
     # Create legend for commands
     legend_elements = [Line2D([0], [0], color=command_colors[cmd], lw=4, label=cmd) for cmd in commands]
     ax2.legend(handles=legend_elements, title='NovaGenesis actions')
 
     plt.tight_layout()
+    plt.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)  # Add X and Y grids
     plt.savefig('plot_d_pid_commands_timeline.pdf')
     plt.close(fig2)
 
