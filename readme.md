@@ -1,5 +1,17 @@
 # Project Overview
 
+## Recommended Usage Order
+
+1. **Analyze the PCAPNG file** using `analyze_pcap.py` to extract raw message data from network captures. This generates `extracted_data.json`.
+
+2. **Filter relevant messages** using `filter.py` to produce a cleaned JSON file `relevant.json` that serves as input for plotting.
+
+3. **Plot message timelines** using `plotmessages.py` with the filtered JSON file to visualize command occurrences over time.
+
+4. **Generate performance graphs** using `plotdata.py` from laboratory experiment CSV data (`data.csv`) to analyze transfer rates and delays.
+
+---
+
 This project contains Python scripts for analyzing and visualizing NovaGenesis message data from JSON files, as well as network packet capture data and performance metrics. The main focus is on parsing message records, filtering relevant data, and plotting timelines and performance graphs.
 
 ## Files in the Project
