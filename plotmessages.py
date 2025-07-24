@@ -109,7 +109,7 @@ def parse_records(json_file):
     return records
 
 
-def plot_pid_vs_command(records, commands, start_time=None, end_time=None):
+def plot_pid_vs_command(records, commands, start_time=None, end_time=None, label_offset_factor=0.5):
     """
     Plots a timeline bar chart for each D_PID from other "ng -X" commands, showing bars for each command occurrence.
     """
@@ -155,7 +155,6 @@ def plot_pid_vs_command(records, commands, start_time=None, end_time=None):
 
     # Plot bars for D_PID-command
     fig2, ax2 = plt.subplots(figsize=(14, max(6, len(y_labels_dpid)*0.5)))
-    bar_width = 0.05  # Make bars narrower on the X axis
 
     # Determine min and max time for X-axis limits
     all_times = [t for times in dpid_command_times.values() for t, _ in times]
@@ -165,8 +164,15 @@ def plot_pid_vs_command(records, commands, start_time=None, end_time=None):
         max_time = end_time if end_time is not None else max(all_times)
         print(f"Min time: {min_time}, Max time: {max_time}")
         ax2.set_xlim(min_time, max_time)  # Use exact limits from parameters or data
+
+        # Calculate bar width and label offset based on X axis length
+        x_range = max_time - min_time
+        bar_width = max(0.01, x_range * 0.005)  # 2% of x_range, minimum 0.01
+        label_offset = bar_width * label_offset_factor
     else:
         print("No times found for plotting.")
+        bar_width = 0.05
+        label_offset = 0.025
 
     for (d_pid, command), time_label_list in dpid_command_times.items():
         y = y_positions_dpid[(d_pid, command)]
@@ -179,7 +185,7 @@ def plot_pid_vs_command(records, commands, start_time=None, end_time=None):
             ax2.barh(y, bar_width, left=t, height=0.6, color=color, edgecolor=color, alpha=0.7)
             if command == 'info' and label:
                 ax2.text(
-                    round(t + bar_width - 0.5, 4),
+                    round(t + label_offset, 4),
                     y,
                     label,
                     va='bottom',
@@ -212,6 +218,7 @@ def main():
     parser.add_argument('json_file', help='Path to the JSON file (one message per line)')
     parser.add_argument('--start-time', type=float, default=None, help='Start time for X-axis (inclusive)')
     parser.add_argument('--end-time', type=float, default=None, help='End time for X-axis (inclusive)')
+    parser.add_argument('--label-offset-factor', type=float, default=0.5, help='Label offset factor relative to bar width')
     args = parser.parse_args()
 
     records = parse_records(args.json_file)
@@ -237,7 +244,7 @@ def main():
         if cmd and cmd not in commands:
             commands.append(cmd)
 
-    plot_pid_vs_command(records, commands)
+    plot_pid_vs_command(records, commands, start_time=args.start_time, end_time=args.end_time, label_offset_factor=args.label_offset_factor)
 
 
 if __name__ == '__main__':
