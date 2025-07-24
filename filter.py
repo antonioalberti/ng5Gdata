@@ -3,7 +3,7 @@ from datetime import datetime
 import argparse
 
 # Global substrings list to be used throughout the program
-SUBSTRINGS = ["ng -notify", "ng -p", "ng -d"]
+SUBSTRINGS = ["ng -notify", "ng -p", "ng -d", "Client", "Server"]
 
 def filter_relevant_messages(input_file='extracted_data.json', output_file='relevant.json', begin_interval=None, end_interval=None):
     relevant_objs = []
