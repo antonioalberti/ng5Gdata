@@ -49,7 +49,7 @@ def parse_records(json_file):
                         d_osid = dst_ids[1] if len(dst_ids) > 1 else None
                         d_pid = dst_ids[2] if len(dst_ids) > 2 else None
                         d_bid = dst_ids[3] if len(dst_ids) > 3 else None
-                        print(f"  Parsed ng -m IDs: DID={did}, S_HID={s_hid}, S_OSID={s_osid}, S_PID={s_pid}, S_BID={s_bid}, D_HID={d_hid}, D_OSID={d_osid}, D_PID={d_pid}, D_BID={d_bid}")
+                        print(f"\n   Parsed ng -m IDs: DID={did}, S_HID={s_hid}, S_OSID={s_osid}, S_PID={s_pid}, S_BID={s_bid}, D_HID={d_hid}, D_OSID={d_osid}, D_PID={d_pid}, D_BID={d_bid}")
                     else:
                         print(f"Warning: Expected at least 3 vectors in ng -m block at line {line_number}, found {len(vectors)}")
                 else:
@@ -109,10 +109,21 @@ def parse_records(json_file):
     return records
 
 
-def plot_pid_vs_command(records, commands, start_time=None, end_time=None, label_offset_factor=0.5):
+def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=None, label_offset_factor=0.5):
     """
     Plots a timeline bar chart for each D_PID from other "ng -X" commands, showing bars for each command occurrence.
     """
+    import os
+
+    # Construct the output filename based on input parameters
+    base_name = os.path.splitext(os.path.basename(json_file))[0]
+    output_filename = f"{base_name}_timeline"
+    if start_time is not None:
+        output_filename += f"_start{start_time:.2f}"
+    if end_time is not None:
+        output_filename += f"_end{end_time:.2f}"
+    output_filename += ".pdf"
+
     # Collect all other_cmds from records
     other_cmd_records = []
     for rec in records:
@@ -207,7 +218,7 @@ def plot_pid_vs_command(records, commands, start_time=None, end_time=None, label
 
     plt.tight_layout()
     plt.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)  # Add X and Y grids
-    plt.savefig('plot_d_pid_commands_timeline.pdf')
+    plt.savefig(output_filename)
     plt.close(fig2)
 
 
@@ -244,7 +255,7 @@ def main():
         if cmd and cmd not in commands:
             commands.append(cmd)
 
-    plot_pid_vs_command(records, commands, start_time=args.start_time, end_time=args.end_time, label_offset_factor=args.label_offset_factor)
+    plot_pid_vs_command(records, commands, args.json_file, start_time=args.start_time, end_time=args.end_time, label_offset_factor=args.label_offset_factor)
 
 
 if __name__ == '__main__':
