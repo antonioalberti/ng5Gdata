@@ -1,0 +1,17 @@
+{"time": 4913.282838821411, "src_mac": "18:80:90:4e:8f:85", "dst_mac": "74:e6:e2:d1:ae:28", "data": "ng -m --cl 0.1 [ < 1 s 15B239D1 > < 4 s 30DC7B54 BE1F3D9B 483F1236 46CB3FCB > < 4 s 60CF50AF DB31054D C2DFBCBE 7615AA66 > ]ng -notify --s 0.1 [ < 1 s 18 > < 1 s 2BF9A30F > < 4 s 30DC7B54 BE1F3D9B C4383EA2 CAF10B66 > ]ng -scn --seq 0.1 [ < 1 s 1D8ABF19 > ]"}
+
+{"time": 4913.284070491791, "src_mac": "74:e6:e2:d1:ae:28", "dst_mac": "18:80:90:4e:8f:85", "data": "ng -m --cl 0.1 [ < 1 s 15B239D1 > < 4 s 60CF50AF DB31054D C2DFBCBE 7615AA66 > < 4 s 30DC7B54 BE1F3D9B 483F1236 46CB3FCB > ]ng -s --b 0.1 [ < 1 s 18 > < 1 s 2BF9A30F > ]ng -s --b 0.1 [ < 1 s 2 > < 1 s 2BF9A30F > ]ng -s --b 0.1 [ < 1 s 9 > < 1 s 2BF9A30F > ]ng -scn --seq 0.1 [ < 1 s 1DF2BEC7 > ]"}
+
+{"time": 4913.83101439476, "src_mac": "18:80:90:4e:8f:85", "dst_mac": "74:e6:e2:d1:ae:28", "data": "ng -m --cl 0.1 [ < 1 s 15B239D1 > < 4 s 30DC7B54 BE1F3D9B 8934EBA0 F6C02FCA > < 4 s 60CF50AF DB31054D C2DFBCBE 7615AA66 > ]ng -d --b 0.1 [ < 1 s 18 > < 1 s 2BF9A30F > < 1 s Service_Offer_608037838.txt > ]ng -info --payload 0.1 [ < 1 s Service_Offer_608037838.txt > ]ng -d --b 0.1 [ < 1 s 2 > < 1 s 2BF9A30F > < 3 s CAF10B66 BE1F3D9B C4383EA2 > ]ng -d --b 0.1 [ < 1 s 9 > < 1 s 2BF9A30F > < 1 s 30DC7B54 > ]ng -scn --ack 0.1 [ < 2 s D5F41EB6 1DF2BEC7 > ]ng -scn --ack 0.1 [ < 2 s 5FFD5623 74884773 > ]Alberti_HUID Offer C4383EA2 C2DFBCBE"}
+
+{"time": 4913.834178447723, "src_mac": "74:e6:e2:d1:ae:28", "dst_mac": "18:80:90:4e:8f:85", "data": "ng -m --cl 0.1 [ < 1 s 15B239D1 > < 4 s 60CF50AF DB31054D C2DFBCBE 7615AA66 > < 4 s 30DC7B54 BE1F3D9B 483F1236 46CB3FCB > ]ng -p --notify 0.1 [ < 1 s 18 > < 1 s A0FD538C > < 1 s Service_Accepted_504703924.txt > < 5 s pub 30DC7B54 BE1F3D9B C4383EA2 CAF10B66 > ]ng -info --payload 0.1 [ < 1 s Service_Accepted_504703924.txt > ]ng -p --b 0.1 [ < 1 s 2 > < 1 s A0FD538C > < 1 s 7615AA66 > ]ng -p --b 0.1 [ < 1 s 2 > < 1 s A0FD538C > < 1 s C2DFBCBE > ]ng -p --b 0.1 [ < 1 s 2 > < 1 s A0FD538C > < 1 s DB31054D > ]ng -p --b 0.1 [ < 1 s 9 > < 1 s A0FD538C > < 1 s 60CF50AF > ]ng -scn --seq 0.1 [ < 1 s B23864A4 > ]Alberti_HUID Accepted C2DFBCBE C4383EA2"}
+
+PID Client = C4383EA2
+
+PID PSS = 483F1236
+
+PID HTS = 8934EBA0 
+
+PID Server = C2DFBCBE
+
+

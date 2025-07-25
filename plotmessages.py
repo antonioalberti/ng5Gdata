@@ -1,10 +1,8 @@
 import json
 import re
-import collections
 from collections import Counter
 import argparse
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 from matplotlib.lines import Line2D
 from matplotlib.ticker import AutoMinorLocator
 
@@ -274,7 +272,7 @@ def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=
                     va='bottom',
                     ha='center',
                     rotation=90,
-                    fontsize=8,
+                    fontsize=10,
                     color=color,
                     bbox=dict(facecolor='white', edgecolor='none', pad=1.5, alpha=0.8)
                 )
@@ -289,6 +287,10 @@ def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=
     ax2.legend(handles=legend_elements, title='NovaGenesis Actions run')
 
     plt.tight_layout()
+
+    # Adjust subplot to make room for manual labels on the left
+    fig2.subplots_adjust(left=0.17)
+
     # Configure denser grid lines on X-axis
     ax2.xaxis.set_minor_locator(AutoMinorLocator(5))  # Add minor ticks between major ticks
     plt.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)  # Add X and Y grids

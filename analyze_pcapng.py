@@ -1,6 +1,7 @@
 import pyshark # Replaces pcapng
 import json
 import re
+import argparse
 
 # Global substrings list to be used throughout the program
 SUBSTRINGS = ["ng -notify ", "ng -p ", "ng -d ", "ng -s ", "App"]
@@ -22,9 +23,13 @@ def clean_string(s):
     # Remove control characters and other non-printable characters that may corrupt JSON
     return ''.join(c for c in s if c.isprintable())
 
-def main():
-    filename = 'ORIGINAL.pcapng' # Using the filename from the original script
-    output_file = 'extracted_data.json'
+def main(input_pcap, output_json, relevant_json):
+    """
+    Main function to process pcapng file and extract relevant data.
+    :param input_pcap: Path to the input pcapng file.
+    :param output_json: Path to the output JSON file for extracted data.
+    :param relevant_json: Path to the output JSON file for relevant messages.
+    """
 
     # Timestamp normalization variables
     first_timestamp = None
@@ -36,8 +41,8 @@ def main():
         # Use pyshark to capture packets from the file with UDP filter and port filter
         # Filter for UDP packets where destination port is 9999 or 8888
         display_filter = "udp and (udp.dstport == 9999 or udp.dstport == 8888)"
-        with pyshark.FileCapture(filename, display_filter=display_filter) as cap:
-            with open(output_file, 'w', encoding='utf-8') as out_fp:
+        with pyshark.FileCapture(input_pcap, display_filter=display_filter) as cap:
+            with open(output_json, 'w', encoding='utf-8') as out_fp:
                 packet_count = 0
                 for pkt in cap:
                     packet_count += 1
@@ -121,16 +126,18 @@ def main():
 
                     if data_str_clean.startswith("ng -m --cl 0.1 ["):
                         out_fp.write(json.dumps(json_obj, ensure_ascii=False) + '\n')
-                        print(f"  Data written to {output_file} for packet {packet_count}.")
+                        print(f"  Data written to {output_json} for packet {packet_count}.")
 
     except FileNotFoundError:
-        print(f"Error: The file '{filename}' was not found.")
+        print(f"Error: The file '{input_pcap}' was not found.")
     except Exception as e:
         print(f"An error occurred: {e}")
 
     print("Packet analysis finished.")
+    # Call the filtering function at the end
+    filter_relevant_messages(output_json, relevant_json)
 
-def filter_relevant_messages(input_file='extracted_data.json', output_file='relevant.json'):
+def filter_relevant_messages(input_file, output_file):
     with open(input_file, 'r', encoding='utf-8') as in_fp, open(output_file, 'w', encoding='utf-8') as out_fp:
         for line in in_fp:
             try:
@@ -138,9 +145,17 @@ def filter_relevant_messages(input_file='extracted_data.json', output_file='rele
                 data_str = obj.get("data", "")
                 if any(sub in data_str for sub in SUBSTRINGS):
                     out_fp.write(json.dumps(obj, ensure_ascii=False) + '\n')
-            except Exception:
+            except Exception as e:
+                print(f"Skipping line due to error in filter_relevant_messages: {e}")
                 continue
 
 if __name__ == '__main__':
-    main()
-    filter_relevant_messages()
+    parser = argparse.ArgumentParser(description="Analyze pcapng files for NovaGenesis messages.")
+    parser.add_argument("input_pcap", default="ORIGINAL.pcapng", nargs='?',
+                        help="Path to the input pcapng file (default: ORIGINAL.pcapng)")
+    parser.add_argument("--output", default="extracted_data.json",
+                        help="Path to the output JSON file (default: extracted_data.json)")
+    parser.add_argument("--relevant", default="relevant.json",
+                        help="Path to the filtered relevant JSON file (default: relevant.json)")
+    args = parser.parse_args()
+    main(args.input_pcap, args.output, args.relevant)
