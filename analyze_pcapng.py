@@ -3,7 +3,7 @@ import json
 import re
 
 # Global substrings list to be used throughout the program
-SUBSTRINGS = ["ng -notify ", "ng -p ", "ng -d ", "ng -s ", "Client ", "Server "]
+SUBSTRINGS = ["ng -notify ", "ng -p ", "ng -d ", "ng -s ", "App"]
 
 def packet_contains_data(data, substrings):
     # Ensure data is bytes for decoding

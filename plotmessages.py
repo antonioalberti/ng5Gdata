@@ -6,6 +6,7 @@ import argparse
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.lines import Line2D
+from matplotlib.ticker import AutoMinorLocator
 
 
 def parse_records(json_file):
@@ -285,10 +286,13 @@ def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=
 
     # Create legend for commands
     legend_elements = [Line2D([0], [0], color=command_colors[cmd], lw=4, label=cmd) for cmd in commands_for_plot]
-    ax2.legend(handles=legend_elements, title='NovaGenesis actions')
+    ax2.legend(handles=legend_elements, title='NovaGenesis Actions run')
 
     plt.tight_layout()
+    # Configure denser grid lines on X-axis
+    ax2.xaxis.set_minor_locator(AutoMinorLocator(5))  # Add minor ticks between major ticks
     plt.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)  # Add X and Y grids
+    plt.grid(True, which='minor', axis='x', linestyle=':', linewidth=0.3, alpha=0.5)  # Add minor X grid lines
     plt.savefig(output_filename)
     plt.close(fig2)
 
