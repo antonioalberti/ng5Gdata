@@ -2,3 +2,4 @@ pcapng
 pandas
 numpy
 matplotlib
+pyshark
