@@ -163,7 +163,7 @@ def parse_records(json_file):
     return records
 
 
-def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=None, label_offset_factor=0.5):
+def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=None, label_offset_factor=0.5, label_font_size=8, bar_width_override=None):
     """
     Plots a timeline bar chart for each D_PID from other "ng -X" commands, showing bars for each command occurrence.
     """
@@ -245,10 +245,15 @@ def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=
         max_time = end_time if end_time is not None else max(all_times)
         print(f"Plotting X-axis range: Min time={min_time:.4f}, Max time={max_time:.4f}")
         ax2.set_xlim(min_time, max_time)  # Use exact limits from parameters or data
-
+ 
         # Calculate bar width and label offset based on X axis length
-        x_range = max_time - min_time
-        bar_width = max(0.01, x_range * 0.005)  # 2% of x_range, minimum 0.01
+        if bar_width_override is not None:
+            bar_width = bar_width_override
+            print(f"Using fixed bar width: {bar_width}")
+        else:
+            x_range = max_time - min_time
+            bar_width = max(0.01, x_range * 0.005)  # 0.5% of x_range, minimum 0.01
+            print(f"Using dynamic bar width: {bar_width}")
         label_offset = bar_width * label_offset_factor
     else:
         print("No times found for plotting.")
@@ -272,7 +277,7 @@ def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=
                     va='bottom',
                     ha='center',
                     rotation=90,
-                    fontsize=10,
+                    fontsize=label_font_size,
                     color=color,
                     bbox=dict(facecolor='white', edgecolor='none', pad=1.5, alpha=0.8)
                 )
@@ -286,10 +291,12 @@ def plot_pid_vs_command(records, commands, json_file, start_time=None, end_time=
     legend_elements = [Line2D([0], [0], color=command_colors[cmd], lw=4, label=cmd) for cmd in commands_for_plot]
     ax2.legend(handles=legend_elements, title='NovaGenesis Actions run')
 
-    plt.tight_layout()
-
     # Adjust subplot to make room for manual labels on the left
     fig2.subplots_adjust(left=0.17)
+
+    # Disable the scientific notation offset on the X-axis for better readability when zoomed in.
+    # This forces matplotlib to show the full number on the tick labels.
+    ax2.ticklabel_format(useOffset=False, style='plain', axis='x')
 
     # Configure denser grid lines on X-axis
     ax2.xaxis.set_minor_locator(AutoMinorLocator(5))  # Add minor ticks between major ticks
@@ -307,6 +314,8 @@ def main():
     parser.add_argument('--start-time', type=float, default=None, help='Start time for X-axis (inclusive)')
     parser.add_argument('--end-time', type=float, default=None, help='End time for X-axis (inclusive)')
     parser.add_argument('--label-offset-factor', type=float, default=0.5, help='Label offset factor relative to bar width')
+    parser.add_argument('--label-font-size', type=int, default=8, help='Font size for the text labels on the plot')
+    parser.add_argument('--bar-width', type=float, default=None, help='Set a fixed width for the bars. Overrides dynamic calculation.')
     args = parser.parse_args()
 
     records = parse_records(args.json_file)
@@ -342,7 +351,7 @@ def main():
     commands_for_plot_legend = sorted(list(all_commands_in_records))
 
 
-    plot_pid_vs_command(records, commands_for_plot_legend, args.json_file, start_time=args.start_time, end_time=args.end_time, label_offset_factor=args.label_offset_factor)
+    plot_pid_vs_command(records, commands_for_plot_legend, args.json_file, start_time=args.start_time, end_time=args.end_time, label_offset_factor=args.label_offset_factor, label_font_size=args.label_font_size, bar_width_override=args.bar_width)
 
 
 if __name__ == '__main__':
