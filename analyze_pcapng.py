@@ -3,7 +3,7 @@ import json
 import re
 
 # Global substrings list to be used throughout the program
-SUBSTRINGS = ["ng -m --cl ", "ng -notify ", "ng -p ", "ng -d ", "ng -s "]
+SUBSTRINGS = ["ng -notify ", "ng -p ", "ng -d ", "ng -s ", "Client ", "Server "]
 
 def packet_contains_data(data, substrings):
     # Ensure data is bytes for decoding
@@ -12,8 +12,8 @@ def packet_contains_data(data, substrings):
     data_str = data.decode(errors='ignore')
     for substr in substrings:
         if substr in data_str:
-            return True
-    return False
+            return substr # Return the matching substring
+    return None # Return None if no match
 
 def mac_addr(mac_bytes):
     return ':'.join(f'{b:02x}' for b in mac_bytes)
@@ -83,15 +83,22 @@ def main():
                         except Exception as e:
                             print(f"Error extracting UDP payload for packet {packet_count}: {e}")
 
+                    # Remove the first two characters as requested by the user
+                    if len(data_str) >= 2:
+                        data_str = data_str[2:]
+                    # else: data_str remains as is if it's less than 2 chars
+
                     # Apply the substring filter
-                    if not packet_contains_data(data_str.encode(), SUBSTRINGS):
+                    matching_substring = packet_contains_data(data_str.encode(), SUBSTRINGS)
+                    if matching_substring is None:
                         continue
 
-                    print(f"  Substring match found in packet {packet_count}.")
+                    print(f"  Substring match found: '{matching_substring}' in packet {packet_count}.")
 
-                    # User request: show UDP payload and pause for input
-                    print(f"  UDP Payload: {data_str}") # Print the extracted payload
-                    input("  Press Enter to continue...") # Pause for user input
+                    # User request: show sample time and UDP payload, then pause for input
+                    #print(f"  Sample Time: {norm_time}") # Print the normalized timestamp
+                    #print(f"  UDP Payload: {data_str}") # Print the extracted payload
+                    #input("  Press Enter to continue...") # Pause for user input
 
                     # Clean data string
                     data_str_clean = clean_string(data_str)
