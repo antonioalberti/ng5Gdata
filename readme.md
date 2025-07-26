@@ -1,144 +1,149 @@
-# Project Overview
+# NovaGenesis 5G Network Analysis Toolkit
 
-## Recommended Usage Order
+## Table of Contents
+- [Project Overview](#project-overview)
+- [Recommended Workflow](#recommended-workflow)
+- [Script Documentation](#script-documentation)
+  - [analyze_pcap.py](#analyze_pcappy)
+  - [filter.py](#filterpy)
+  - [plotmessages.py](#plotmessagespy)
+  - [plotdata.py](#plotdatapy)
+- [Setup & Dependencies](#setup--dependencies)
+- [File Structure](#file-structure)
+- [Examples](#examples)
+- [Troubleshooting](#troubleshooting)
 
-1. **Analyze the PCAPNG file** using `analyze_pcap.py` to extract raw message data from network captures. This generates `extracted_data.json`.
+## Project Overview
 
-2. **Filter relevant messages** using `filter.py` to produce a cleaned JSON file `relevant.json` that serves as input for plotting.
+This toolkit provides Python scripts for analyzing and visualizing NovaGenesis message data from network captures (PCAPNG) and performance metrics. Key capabilities include:
 
-3. **Plot message timelines** using `plotmessages.py` with the filtered JSON file to visualize command occurrences over time.
+- Packet capture analysis and message extraction
+- Advanced message filtering
+- Timeline visualization of command sequences
+- Performance metric plotting (transfer rates, delays)
 
-4. **Generate performance graphs** using `plotdata.py` from laboratory experiment CSV data (`data.csv`) to analyze transfer rates and delays.
+## Recommended Workflow
 
----
+1. **Capture Analysis**  
+   ```bash
+   python analyze_pcap.py
+   ```
+   - Processes `ORIGINAL.pcapng`
+   - Outputs: `extracted_data.json`
 
-This project contains Python scripts for analyzing and visualizing NovaGenesis message data from JSON files, as well as network packet capture data and performance metrics. The main focus is on parsing message records, filtering relevant data, and plotting timelines and performance graphs.
+2. **Message Filtering**  
+   ```bash
+   python filter.py --input_file extracted_data.json --output_file relevant.json \
+     --begin_interval 4913.24 --end_interval 4914.00
+   ```
 
-## Files in the Project
+3. **Timeline Visualization**  
+   ```bash
+   python plotmessages.py relevant.json --start-time 4913.24 --end-time 4914.00
+   ```
 
-### plotmessages.py
+4. **Performance Analysis**  
+   ```bash
+   python plotdata.py
+   ```
 
-This script reads a JSON file containing NovaGenesis messages (one JSON object per line), parses relevant command data, and generates a timeline bar chart visualization.
-
-#### Features
-
-- Parses "ng -m" command blocks to extract device and process IDs.
-- Parses other "ng -X" command blocks to track command occurrences associated with destination process IDs (D_PID).
-- Filters records by optional start and end time parameters.
-- Plots a timeline bar chart showing occurrences of commands per D_PID.
-- Supports customization of the X axis time range via command line arguments.
-- Dynamically adjusts bar widths and label positions based on the time range.
-- Adds grid lines on both X and Y axes for better readability.
-- Labels for "info" commands are displayed vertically with a white background for clarity.
-- Saves the plot as `plot_d_pid_commands_timeline.pdf`.
-
-#### Usage
-
-```bash
-python3 plotmessages.py <json_file> [--start-time START] [--end-time END] [--label-offset-factor FACTOR]
-```
-
-- `<json_file>`: Path to the JSON file containing NovaGenesis messages (one JSON object per line).
-- `--start-time`: (Optional) Start time (inclusive) for filtering messages and setting the X axis minimum.
-- `--end-time`: (Optional) End time (inclusive) for filtering messages and setting the X axis maximum.
-- `--label-offset-factor`: (Optional) Factor to control the horizontal offset of labels relative to bar width (default is 0.5).
-
----
+## Script Documentation
 
 ### analyze_pcap.py
 
-This script processes a PCAPNG network capture file (`ORIGINAL.pcapng`), extracts TCP/UDP packet payloads containing specific NovaGenesis commands, normalizes timestamps relative to the first packet, and outputs the extracted data as JSON lines in `extracted_data.json`. It also filters out ICMP packets and non-relevant data.
+**Purpose**: Extract NovaGenesis messages from network captures
 
-#### Features
+**Features**:
+- TCP/UDP payload extraction
+- Timestamp normalization
+- MAC address tracking
+- Automatic relevant message filtering
 
-- Parses network packets to extract NovaGenesis command data.
-- Normalizes timestamps to start from zero.
-- Outputs extracted data with source and destination MAC addresses.
-- Filters out irrelevant packets.
-- Automatically filters relevant messages into `relevant.json`.
-
-#### Usage
-
-```bash
-python3 analyze_pcap.py
-```
-
-The script reads `ORIGINAL.pcapng` and produces `extracted_data.json` and `relevant.json`.
-
----
+**Output Files**:
+- `extracted_data.json` (raw extracted messages)
+- `relevant.json` (filtered messages)
 
 ### filter.py
 
-This script filters relevant NovaGenesis messages from a JSON lines file based on specific command substrings and optional time intervals.
+**Purpose**: Filter messages by command type and time range
 
-#### Features
-
-- Filters messages containing specific NovaGenesis commands.
-- Supports filtering by start and end time intervals.
-- Outputs filtered messages to a specified JSON lines file.
-
-#### Usage
-
+**Parameters**:
 ```bash
-python3 filter.py [--input_file INPUT] [--output_file OUTPUT] [--begin_interval START] [--end_interval END]
+--input_file     Input JSON file (default: extracted_data.json)
+--output_file    Output JSON file (default: relevant.json)  
+--begin_interval Start time in seconds
+--end_interval   End time in seconds
 ```
 
-- `--input_file`: Input JSON lines file (default: `extracted_data.json`).
-- `--output_file`: Output JSON lines file (default: `relevant.json`).
-- `--begin_interval`: Start time in seconds to include messages.
-- `--end_interval`: End time in seconds to include messages.
+### plotmessages.py
 
----
+**Purpose**: Visualize command timelines
+
+**Example**:
+```bash
+python plotmessages.py relevant.json \
+  --start-time 5190.00 \
+  --end-time 5200.00 \
+  --label-offset-factor 0.3
+```
+
+**Output**: `plot_d_pid_commands_timeline.pdf`
 
 ### plotdata.py
 
-This script reads performance data from `data.csv` and generates two plots:
+**Purpose**: Generate performance graphs
 
-1. Data Transfer Rate plot comparing traditional CDN and NovaGenesis.
-2. Transfer Time (Delay) plot comparing traditional CDN and NovaGenesis.
+**Output Files**:
+- `data_transfer_rate_plot.pdf`
+- `delay_plot.pdf`
 
-#### Features
+## Setup & Dependencies
 
-- Reads CSV data with transfer rates and times.
-- Calculates cumulative averages and standard deviations.
-- Plots cumulative averages with error bars and instantaneous values.
-- Saves plots as `data_transfer_rate_plot.pdf` and `delay_plot.pdf`.
+**Requirements**:
+- Python 3.8+
+- pip 20.0+
 
-#### Usage
-
-```bash
-python3 plotdata.py
-```
-
-Ensure `data.csv` is present in the same directory.
-
----
-
-## Additional Notes
-
-- JSON input files should contain one JSON object per line.
-- Plots are saved as PDF files in the current directory.
-- Scripts print processing information and warnings to the console.
-- Bar widths and label positions in plots adjust dynamically based on time ranges and user parameters.
-
----
-
-## Setup Virtual Environment and Install Dependencies
-
-To set up the Python virtual environment and install the required packages, run the following shell script:
-
+**Setup**:
 ```bash
 bash setup_venv.sh
 ```
 
-This script will:
-- Create a new virtual environment in the `.venv` directory.
-- Activate the virtual environment.
-- Upgrade `pip` to the latest version.
-- Install all required packages listed in `requirements.txt`.
+**Dependencies** (see requirements.txt):
+- matplotlib==3.5.1
+- pandas==1.3.5  
+- scapy==2.4.5
+- numpy==1.21.4
 
-Make sure you have Python 3 installed on your system.
+## File Structure
 
----
+```
+.
+├── analyze_pcap.py       # Packet analysis
+├── filter.py             # Message filtering
+├── plotmessages.py       # Timeline plotting
+├── plotdata.py           # Performance plotting
+├── data.csv              # Performance metrics
+├── ORIGINAL.pcapng       # Network capture
+├── requirements.txt      # Dependencies
+└── setup_venv.sh         # Setup script
+```
 
-For any questions or issues, please refer to the source code comments or contact the project maintainer.
+## Examples
+
+**Sample Filtered Output** (relevant.json):
+```json
+{"timestamp": 4913.24, "command": "ng -m", "pid": "PID_123"}
+{"timestamp": 4913.45, "command": "ng -info", "pid": "PID_456"}
+```
+
+**Generated Plot**:
+![Timeline Example](extracted_data_timeline_start4913.24_end4914.00_named.png)
+
+## Troubleshooting
+
+**Common Issues**:
+1. Missing PCAPNG file: Ensure `ORIGINAL.pcapng` exists
+2. Dependency errors: Run `pip install -r requirements.txt`
+3. Plot rendering issues: Try different matplotlib backends
+
+For additional help, consult the source code comments or contact the maintainer.
