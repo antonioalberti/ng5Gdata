@@ -53,7 +53,9 @@ def parse_records(json_file):
                         s_pid = matches[0][2]
                 
                 # Parse other "ng -X" command blocks with detailed information
+                print(f"DEBUG: Full data being parsed: {data}")
                 other_cmd_blocks = re.findall(r'ng\s+-(?!m)([a-zA-Z0-9_-]+)[^\[]*\[(.*?)\]', data)
+                print(f"DEBUG: Found command blocks: {other_cmd_blocks}")
                 
                 # Create a record for this message
                 message_record = {
@@ -67,6 +69,7 @@ def parse_records(json_file):
                 for cmd, block in other_cmd_blocks:
                     label = None
                     detailed_info = ""
+                    print(f"DEBUG: Processing command '{cmd}' with block: {block}")
                     
                     # Extract detailed information based on command type
                     if cmd == 'd':
@@ -98,27 +101,16 @@ def parse_records(json_file):
                                 file_name = file_match.group(1)
                                 detailed_info = f"Notify: {file_name}"
                     elif cmd == 'p':
-                        # Check if it's --notify or --b
-                        if '--notify' in block:
-                            file_match = re.search(r'<\s*[^>]*?\s*([^ >]+)\s*>', block)
-                            if file_match:
-                                file_name = file_match.group(1)
-                                detailed_info = f"Publish & Notify: {file_name}"
-                        elif '--b' in block:
-                            # Extract file name and hash from ng -d --b command
-                            # Pattern: ng -d --b 0.1 [ < 1 s 18 > < 1 s HASH > < 1 s FILENAME > ]
-                            # Only process commands that start with < 1 s 18 >
-                            deliver_match = re.search(r'<\s*1\s+s\s+18\s*>\s*<\s*1\s+s\s+([0-9A-F]{8})\s*>\s*<\s*1\s+s\s+([^>]+)\s*>', block)
-                            if deliver_match:
-                                hash_value = deliver_match.group(1)
-                                file_name = deliver_match.group(2)
-                                detailed_info = f"Deliver: {file_name} (hash: {hash_value})"
-                            else:
-                                # Fallback to extracting just file name
-                                file_match = re.search(r'<\s*[^>]*?\s*([^ >]+)\s*>', block)
-                                if file_match:
-                                    file_name = file_match.group(1)
-                                    detailed_info = f"Deliver: {file_name}"
+                        # Simple search for any filename with .txt or .jpg extension
+                        print(f"DEBUG: Processing ng-p --notify command, block content: {block}")
+                        file_match = re.search(r'([^\s>]+?\.txt|[^\s>]+?\.jpg)', block)
+                        if file_match:
+                            file_name = file_match.group(1)
+                            detailed_info = f"Publish: {file_name}"
+                            print(f"DEBUG: Found filename: {file_name}")
+                        else:
+                            print(f"DEBUG: No filename found in block")
+                            detailed_info = "Publish: (no file found)"
                     elif cmd == 'scn':
                         # For scn command, don't show sequence hash as requested
                         detailed_info = "Sequence command"
@@ -193,6 +185,16 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                         file_only_match = re.search(r'Deliver:\s*([^\s]+\.txt|[^\s]+\.jpg)', detailed_info)
                         if file_only_match:
                             payload_info = file_only_match.group(1)
+                elif cmd_type == 'p' and detailed_info:
+                    # Extract file name from publish detailed_info
+                    file_match = re.search(r'Publish:\s*(.+?\.txt|.+?\.jpg)', detailed_info)
+                    if file_match:
+                        payload_info = file_match.group(1)
+                    else:
+                        # Fallback to extracting any file name
+                        file_match = re.search(r'([^\s]+\.txt|[^\s]+\.jpg)', detailed_info)
+                        if file_match:
+                            payload_info = file_match.group(1)
                 elif cmd_type == 'notify' and detailed_info:
                     # Extract notify hash for display
                     notify_hash_match = re.search(r'Notify hash:\s*([0-9A-F]{8})', detailed_info)
@@ -357,7 +359,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
         # Get the pre-calculated y position
         y_pos = y_positions[i]
         
-        # Get source and destination process names
+        # All messages should go from S_PID to D_PID
         s_pid = msg.get('s_pid')
         d_pid = msg.get('d_pid')
         
@@ -369,21 +371,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
             start_x = process_x_map[source_process] 
             end_x = process_x_map[dest_process] 
             
-            # Determine color based on direction
-            if source_process == dest_process:
-                color = 'gray'  # Self-message
-            elif source_process == 'P1' and dest_process == 'P2':
-                color = 'blue'  # P1 to P2 messages
-            elif source_process == 'P2' and dest_process == 'P1':
-                color = 'green'  # P2 to P1 messages
-            else:
-                color = 'blue'  # Default for other directions
-            
-            arrow_dir = '->'
-        else:
-            # Fallback to default positions
-            start_x = 2 + 0.2
-            end_x = 10 - 0.2
+            # All messages are blue and go from S_PID to D_PID
             color = 'blue'
             arrow_dir = '->'
         
@@ -399,23 +387,20 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
         command_types = msg.get('command_types', [])
         payload_info = msg.get('payload_info')
         
-        if command_types and d_pid in pid_to_process:
+        if command_types:
             # Create label with command types - limit to first 3 commands to avoid large labels
             if len(command_types) > 3:
                 label_text = 'ng-' + ', ng-'.join(command_types[:3]) + '...'
             else:
                 label_text = 'ng-' + ', ng-'.join(command_types)
             
-            dest_process = pid_to_process[d_pid]
-            dest_x = process_x_map[dest_process]
+            # Always position label near the destination (D_PID) which is on the right side
+            # Find the rightmost process for positioning
+            max_x = max(process_x_map.values()) if process_x_map else 10 - 0.2
             
-            # Position label on the appropriate side with consistent justification
-            if start_x < end_x:  # Message goes left to right
-                label_x = dest_x + 0.3
-                ha_alignment = 'left'
-            else:  # Message goes right to left
-                label_x = dest_x - 0.3
-                ha_alignment = 'right'
+            # Position label on the right side
+            label_x = max_x + 0.3
+            ha_alignment = 'left'
             
             ax.text(label_x, y_pos, label_text, va='center', ha=ha_alignment,
                    fontsize=12, color=color, fontweight='bold',
