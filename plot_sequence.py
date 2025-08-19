@@ -151,12 +151,15 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
                 # Add command type to the list
                 command_types.append(cmd_type)
                 
-                # Check if this is a .txt payload
+                # Check if this is a .txt or .jpg payload
                 if cmd_type == 'info' and detailed_info:
-                    # Extract payload name and check if it's .txt
-                    payload_match = re.search(r'Payload:\s*([^\s]+\.txt)', detailed_info)
-                    if payload_match:
-                        payload_info = payload_match.group(1)
+                    # Extract payload name and check if it's .txt or .jpg
+                    payload_match_txt = re.search(r'Payload:\s*([^\s]+\.txt)', detailed_info)
+                    payload_match_jpg = re.search(r'Payload:\s*([^\s]+\.jpg)', detailed_info)
+                    if payload_match_txt:
+                        payload_info = payload_match_txt.group(1)
+                    elif payload_match_jpg:
+                        payload_info = payload_match_jpg.group(1)
             
             # Create a single message entry
             message_data.append({
@@ -176,18 +179,32 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
     
     # Find min and max times for normalization
     all_times = [msg.get('time', 0) for msg in sorted_messages]
-    min_time = min(all_times)
-    max_time = max(all_times)
+    
+    # Use provided start_time and end_time if available, otherwise use data range
+    if start_time is not None:
+        min_time = start_time
+    else:
+        min_time = min(all_times)
+    
+    if end_time is not None:
+        max_time = end_time
+    else:
+        max_time = max(all_times)
+    
     time_range = max_time - min_time if max_time > min_time else 1
     
     # Process all messages (not just the first 4)
     messages_to_plot = sorted_messages
     
     # Create figure and axis
-    fig, ax = plt.subplots(figsize=(16, 12))
+    fig, ax = plt.subplots(figsize=(16, 9))
     
     # Set up the diagram with time flowing from top to bottom
     ax.set_xlim(0, 12)
+    
+    # Remove X-axis tick labels and values as they are not important
+    ax.set_xticks([])
+    ax.set_xticklabels([])
     
     # Calculate time gaps between messages to identify discontinuities
     if len(messages_to_plot) > 1:
@@ -204,49 +221,43 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
         for i, gap in enumerate(time_gaps):
             if gap > gap_threshold:
                 gap_positions.append(i)
+    
+    # Set y-axis limits for visualization (not the actual time values)
+    y_min = 0.5
+    y_max = 9.5
+    ax.set_ylim(y_min, y_max)
+    
+    # Create y-axis positions with gaps - map actual time to y positions
+    y_positions = []
+    current_y = y_max
+    
+    for i, msg in enumerate(messages_to_plot):
+        msg_time = msg.get('time', 0)
         
-        # Set y-axis limits
-        y_min = 0.5
-        y_max = 9.5
-        ax.set_ylim(y_min, y_max)
-        
-        # Create y-axis positions with gaps
-        y_positions = []
-        current_y = y_max
-        
-        for i, msg in enumerate(messages_to_plot):
-            msg_time = msg.get('time', 0)
-            
-            # Calculate y position for this message
-            if i == 0:
-                # First message at the top
+        # Calculate y position for this message
+        if i == 0:
+            # First message at the top
+            y_pos = current_y
+        else:
+            # Check if there's a significant gap before this message
+            if i-1 in gap_positions:
+                # Add a gap in the y-axis
+                gap_size = 0.5  # Fixed gap size
+                current_y -= gap_size
                 y_pos = current_y
             else:
-                # Check if there's a significant gap before this message
-                if i-1 in gap_positions:
-                    # Add a gap in the y-axis
-                    gap_size = 0.5  # Fixed gap size
-                    current_y -= gap_size
-                    y_pos = current_y
-                else:
-                    # Normal spacing
-                    y_pos = current_y
-            
-            y_positions.append(y_pos)
-            
-            # Move to next position
-            current_y -= 1.0  # Fixed spacing between messages
+                # Normal spacing
+                y_pos = current_y
         
-        # Sort messages and y_positions together by time
-        sorted_pairs = sorted(zip(messages_to_plot, y_positions), key=lambda x: x[0]['time'])
-        messages_to_plot = [pair[0] for pair in sorted_pairs]
-        y_positions = [pair[1] for pair in sorted_pairs]
-    else:
-        # Handle case with only one message
-        y_min = 0.5
-        y_max = 9.5
-        ax.set_ylim(y_min, y_max)
-        y_positions = [y_max - 1.0]  # Center the single message
+        y_positions.append(y_pos)
+        
+        # Move to next position
+        current_y -= 1.0  # Fixed spacing between messages
+    
+    # Sort messages and y_positions together by time
+    sorted_pairs = sorted(zip(messages_to_plot, y_positions), key=lambda x: x[0]['time'])
+    messages_to_plot = [pair[0] for pair in sorted_pairs]
+    y_positions = [pair[1] for pair in sorted_pairs]
     
     # Remove y-axis inversion so time flows from top to bottom (earlier times at top, later times at bottom)
     # No need to invert_yaxis()
@@ -289,10 +300,10 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
     for i, (process_name, x_pos) in enumerate(zip(pid_to_process.values(), x_positions)):
         ax.plot([x_pos, x_pos], [y_min, y_max], 'k-', linewidth=2)
         
-        # Position process labels at the very top of the plot
-        label_y = y_max + 0.2
+        # Position process labels at the very top of the plot with more space below
+        label_y = y_max + 0.5
         pid = process_to_pid[process_name]
-        ax.text(x_pos, label_y, f'{process_name}: {pid}', ha='center', fontsize=10, fontweight='bold')
+        ax.text(x_pos, label_y, f'{process_name}: {pid}', ha='center', fontsize=14, fontweight='bold')
         
         process_x_map[process_name] = x_pos
     
@@ -317,8 +328,8 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
             dest_process = pid_to_process[d_pid]
             
             # Get x positions for source and destination
-            start_x = process_x_map[source_process] + 0.2
-            end_x = process_x_map[dest_process] - 0.2
+            start_x = process_x_map[source_process] 
+            end_x = process_x_map[dest_process] 
             
             # Determine color based on direction
             if source_process == dest_process:
@@ -362,14 +373,14 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
             
             # Position label on the appropriate side with consistent justification
             if start_x < end_x:  # Message goes left to right
-                label_x = dest_x + 0.5
+                label_x = dest_x + 0.3
                 ha_alignment = 'left'
             else:  # Message goes right to left
-                label_x = dest_x - 0.5
+                label_x = dest_x - 0.3
                 ha_alignment = 'right'
             
             ax.text(label_x, y_pos, label_text, va='center', ha=ha_alignment,
-                   fontsize=8, color=color, fontweight='bold',
+                   fontsize=12, color=color, fontweight='bold',
                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
         
         # If there's a .txt payload, display it on the message line itself
@@ -378,7 +389,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
             mid_x = (start_x + end_x) / 2
             # Display payload info on the line
             ax.text(mid_x, y_pos - 0.1, payload_info, ha='center', va='top', 
-                   fontsize=9, color='red', fontweight='bold',
+                   fontsize=13, color='red', fontweight='bold',
                    bbox=dict(boxstyle="round,pad=0.2", facecolor='yellow', alpha=0.9))
     
     # Remove time scale reference as requested
@@ -389,6 +400,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
         y_ticks = []
         y_tick_labels = []
         
+        # Add ticks for each message position
         for i, (msg, y_pos) in enumerate(zip(messages_to_plot, y_positions)):
             msg_time = msg.get('time', 0)
             
@@ -397,20 +409,46 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
             
             # Check if there's a gap before this message
             if i > 0 and (i-1 in gap_positions):
-                # Add a discontinuity symbol
-                y_tick_labels.append(f"{msg_time:.3f} ⋮")
+                # Add a discontinuity symbol with high precision
+                y_tick_labels.append(f"{msg_time:.6f} ⋮")
             else:
-                # Normal time label
-                y_tick_labels.append(f"{msg_time:.3f}")
+                # Normal time label with high precision
+                y_tick_labels.append(f"{msg_time:.6f}")
+        
+        # Add start and end time ticks at the boundaries
+        y_ticks.insert(0, y_max)  # Start time at top
+        y_tick_labels.insert(0, f"{min_time:.6f}")
+        y_ticks.append(y_min)  # End time at bottom
+        y_tick_labels.append(f"{max_time:.6f}")
+        
+        # Add additional grid lines for better time resolution
+        # Calculate minor ticks between major ticks
+        minor_y_ticks = []
+        for i in range(len(y_ticks) - 1):
+            y1, y2 = y_ticks[i], y_ticks[i + 1]
+            # Add 4 minor ticks between major ticks
+            for j in range(1, 5):
+                minor_y = y1 + (y2 - y1) * j / 5
+                minor_y_ticks.append(minor_y)
         
         ax.set_yticks(y_ticks)
         ax.set_yticklabels(y_tick_labels)
+        
+        # Set minor ticks for higher resolution grid
+        ax.set_yticks(minor_y_ticks, minor=True)
+        
+        # Enable minor grid
+        ax.grid(True, which='minor', linestyle=':', alpha=0.3, color='gray')
+        ax.grid(True, which='major', linestyle='-', alpha=0.5, color='gray')
+        
     elif len(messages_to_plot) == 1:
-        # Single message case
-        ax.set_yticks([y_positions[0]])
-        ax.set_yticklabels([f"{messages_to_plot[0].get('time', 0):.3f}"])
+        # Single message case - add start and end time boundaries
+        ax.set_yticks([y_max, y_positions[0], y_min])
+        ax.set_yticklabels([f"{min_time:.6f}", f"{messages_to_plot[0].get('time', 0):.6f}", f"{max_time:.6f}"])
     else:
-        ax.set_yticklabels([f"{min_time:.3f}"])
+        # No messages case - show start and end time
+        ax.set_yticks([y_max, y_min])
+        ax.set_yticklabels([f"{min_time:.6f}", f"{max_time:.6f}"])
     
     # Save the figure
     base_name = os.path.splitext(os.path.basename(json_file))[0]
