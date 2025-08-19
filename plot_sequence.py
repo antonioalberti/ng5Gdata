@@ -38,18 +38,19 @@ def parse_records(json_file):
                     vectors = re.findall(r'<\s*(.*?)\s*>', block_content)
                     
                     # Look for the specific pattern with "< 4 s" to extract S_PID and D_PID
-                    # According to the user, S_PID is in the first "< 4 s" and D_PID in the second "< 4 s"
-                    four_s_pattern = r'<\s*4\s*s\s+([0-9A-F]{8})\s+([0-9A-F]{8})'
+                    # According to the user, S_PID is the third value in the first "< 4 s" vector
+                    # and D_PID is the third value in the second "< 4 s" vector
+                    four_s_pattern = r'<\s*4\s*s\s+([0-9A-F]{8})\s+([0-9A-F]{8})\s+([0-9A-F]{8})\s+([0-9A-F]{8})'
                     matches = re.findall(four_s_pattern, block_content)
                     
                     if len(matches) >= 2:
-                        # First match gives S_PID
-                        s_pid = matches[0][0]
-                        # Second match gives D_PID
-                        d_pid = matches[1][0]
+                        # First match: S_PID is the third value (index 2)
+                        s_pid = matches[0][2]
+                        # Second match: D_PID is the third value (index 2)
+                        d_pid = matches[1][2]
                     elif len(matches) == 1:
                         # Only one match found, use it for S_PID
-                        s_pid = matches[0][0]
+                        s_pid = matches[0][2]
                 
                 # Parse other "ng -X" command blocks with detailed information
                 other_cmd_blocks = re.findall(r'ng\s+-(?!m)([a-zA-Z0-9_-]+)[^\[]*\[(.*?)\]', data)
@@ -111,7 +112,7 @@ def parse_records(json_file):
     return records
 
 
-def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
+def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, figsize_width=16, figsize_height=9):
     """
     Plots a sequence diagram for NovaGenesis messages between S_PID and D_PID.
     """
@@ -197,7 +198,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
     messages_to_plot = sorted_messages
     
     # Create figure and axis
-    fig, ax = plt.subplots(figsize=(16, 9))
+    fig, ax = plt.subplots(figsize=(figsize_width, figsize_height))
     
     # Set up the diagram with time flowing from top to bottom
     ax.set_xlim(0, 12)
@@ -474,10 +475,13 @@ def main():
     parser.add_argument('json_file', help='Path to the JSON file (one message per line)')
     parser.add_argument('--start-time', type=float, default=None, help='Start time for X-axis (inclusive)')
     parser.add_argument('--end-time', type=float, default=None, help='End time for X-axis (inclusive)')
+    parser.add_argument('--figsize-width', type=float, default=16, help='Figure width in inches')
+    parser.add_argument('--figsize-height', type=float, default=9, help='Figure height in inches')
     args = parser.parse_args()
 
     records = parse_records(args.json_file)
-    plot_sequence_diagram(records, args.json_file, start_time=args.start_time, end_time=args.end_time)
+    plot_sequence_diagram(records, args.json_file, start_time=args.start_time, end_time=args.end_time, 
+                         figsize_width=args.figsize_width, figsize_height=args.figsize_height)
 
 
 if __name__ == '__main__':
