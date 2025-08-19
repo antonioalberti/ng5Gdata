@@ -92,10 +92,8 @@ def parse_records(json_file):
                             if hashes:
                                 detailed_info = f"Publish hashes: {', '.join(hashes[:3])}{'...' if len(hashes) > 3 else ''}"
                     elif cmd == 'scn':
-                        # Extract sequence hash
-                        seq_hash = re.search(r'<\s*[^>]*?\s*([0-9A-F]{8})\s*>', block)
-                        if seq_hash:
-                            detailed_info = f"Sequence hash: {seq_hash.group(1)}"
+                        # For scn command, don't show sequence hash as requested
+                        detailed_info = "Sequence command"
                     
                     rec_entry = {
                         'time': time,
@@ -133,7 +131,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
             filtered_records.append(rec)
         records = filtered_records
     
-    # Collect all messages with their S_PID and D_PID and detailed info
+    # Collect messages grouped by their original record (time, S_PID, D_PID)
     message_data = []
     for rec in records:
         time = rec.get('time')
@@ -141,15 +139,32 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
         d_pid = rec.get('d_pid')
         other_cmds = rec.get('other_cmds', [])
         
-        for cmd in other_cmds:
-            detailed_info = cmd.get('detailed_info', '')
+        if other_cmds:  # Only create a message if there are ng-X commands
+            # Extract command types and payload info
+            command_types = []
+            payload_info = None
+            
+            for cmd in other_cmds:
+                cmd_type = cmd.get('command', '')
+                detailed_info = cmd.get('detailed_info', '')
+                
+                # Add command type to the list
+                command_types.append(cmd_type)
+                
+                # Check if this is a .txt payload
+                if cmd_type == 'info' and detailed_info:
+                    # Extract payload name and check if it's .txt
+                    payload_match = re.search(r'Payload:\s*([^\s]+\.txt)', detailed_info)
+                    if payload_match:
+                        payload_info = payload_match.group(1)
+            
+            # Create a single message entry
             message_data.append({
                 'time': time,
                 's_pid': s_pid,
                 'd_pid': d_pid,
-                'command': cmd.get('command', 'unknown'),
-                'label': cmd.get('label', ''),
-                'detailed_info': detailed_info
+                'command_types': command_types,
+                'payload_info': payload_info
             })
     
     if not message_data:
@@ -233,29 +248,53 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
         ax.set_ylim(y_min, y_max)
         y_positions = [y_max - 1.0]  # Center the single message
     
-    ax.invert_yaxis()  # Invert y-axis so time flows from top to bottom
+    # Remove y-axis inversion so time flows from top to bottom (earlier times at top, later times at bottom)
+    # No need to invert_yaxis()
     
     # Add grid with more visibility
     ax.grid(True, linestyle='-', alpha=0.5, color='gray')
     ax.set_axisbelow(True)  # Place grid lines below other elements
     
-    # Draw lifelines using the S_PID and D_PID from the first message
-    s_x = 2
-    d_x = 10
-    y_start = y_min
-    y_end = y_max
+    # Collect all unique PIDs from messages
+    all_pids = set()
+    for msg in messages_to_plot:
+        s_pid = msg.get('s_pid')
+        d_pid = msg.get('d_pid')
+        if s_pid:
+            all_pids.add(s_pid)
+        if d_pid:
+            all_pids.add(d_pid)
     
-    if messages_to_plot:
-        first_s_pid = messages_to_plot[0].get('s_pid', 'Unknown')
-        first_d_pid = messages_to_plot[0].get('d_pid', 'Unknown')
+    # Create process mapping: P1, P2, P3, etc.
+    pid_to_process = {}
+    process_to_pid = {}
+    for i, pid in enumerate(sorted(all_pids), 1):
+        process_name = f'P{i}'
+        pid_to_process[pid] = process_name
+        process_to_pid[process_name] = pid
+    
+    # Calculate x positions for each process
+    num_processes = len(all_pids)
+    if num_processes == 1:
+        x_positions = [6]  # Center if only one process
+    else:
+        # Distribute processes evenly across the x-axis
+        x_start = 2
+        x_end = 10
+        x_spacing = (x_end - x_start) / (num_processes - 1)
+        x_positions = [x_start + i * x_spacing for i in range(num_processes)]
+    
+    # Draw lifelines for each process
+    process_x_map = {}
+    for i, (process_name, x_pos) in enumerate(zip(pid_to_process.values(), x_positions)):
+        ax.plot([x_pos, x_pos], [y_min, y_max], 'k-', linewidth=2)
         
-        # S_PID lifeline
-        ax.plot([s_x, s_x], [y_start, y_end], 'k-', linewidth=2)
-        ax.text(s_x, y_start - 0.3, f'S_PID: {first_s_pid}', ha='center', fontsize=12, fontweight='bold')
+        # Position process labels at the very top of the plot
+        label_y = y_max + 0.2
+        pid = process_to_pid[process_name]
+        ax.text(x_pos, label_y, f'{process_name}: {pid}', ha='center', fontsize=10, fontweight='bold')
         
-        # D_PID lifeline
-        ax.plot([d_x, d_x], [y_start, y_end], 'k-', linewidth=2)
-        ax.text(d_x, y_start - 0.3, f'D_PID: {first_d_pid}', ha='center', fontsize=12, fontweight='bold')
+        process_x_map[process_name] = x_pos
     
     # Process each message
     for i, msg in enumerate(messages_to_plot):
@@ -269,21 +308,34 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
         # Get the pre-calculated y position
         y_pos = y_positions[i]
         
-        # Determine message direction and color based on command type
-        if msg_command in ['info', 'send', 'request', 'notify', 'd', 'p']:
-            # Message from S_PID to D_PID
-            start_x, end_x = s_x + 0.2, d_x - 0.2
-            color = 'blue'
-            arrow_dir = '->'
-        elif msg_command in ['response', 'reply', 's', 'scn']:
-            # Message from D_PID to S_PID
-            start_x, end_x = d_x - 0.2, s_x + 0.2
-            color = 'green'
+        # Get source and destination process names
+        s_pid = msg.get('s_pid')
+        d_pid = msg.get('d_pid')
+        
+        if s_pid and d_pid and s_pid in pid_to_process and d_pid in pid_to_process:
+            source_process = pid_to_process[s_pid]
+            dest_process = pid_to_process[d_pid]
+            
+            # Get x positions for source and destination
+            start_x = process_x_map[source_process] + 0.2
+            end_x = process_x_map[dest_process] - 0.2
+            
+            # Determine color based on direction
+            if source_process == dest_process:
+                color = 'gray'  # Self-message
+            elif source_process == 'P1' and dest_process == 'P2':
+                color = 'blue'  # P1 to P2 messages
+            elif source_process == 'P2' and dest_process == 'P1':
+                color = 'green'  # P2 to P1 messages
+            else:
+                color = 'blue'  # Default for other directions
+            
             arrow_dir = '->'
         else:
-            # Unknown command, use gray
-            start_x, end_x = s_x + 0.2, d_x - 0.2
-            color = 'gray'
+            # Fallback to default positions
+            start_x = 2 + 0.2
+            end_x = 10 - 0.2
+            color = 'blue'
             arrow_dir = '->'
         
         # Draw the message line at the correct time position
@@ -294,76 +346,42 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None):
         ax.annotate('', xy=(end_x, y_pos), xytext=(start_x, y_pos),
                     arrowprops=dict(arrowstyle=arrow_dir, lw=2, color=color))
         
-        # Add detailed command labels next to the axes
-        if msg_command in ['info', 'send', 'request', 'notify', 'd', 'p']:
-            # Label near D_PID axis with detailed info
-            if detailed_info:
-                # Split detailed info into multiple lines if too long
-                if len(detailed_info) > 30:
-                    # Split by comma or space to break into lines
-                    words = detailed_info.split(', ')
-                    lines = []
-                    current_line = ""
-                    for word in words:
-                        if len(current_line + word) < 25:
-                            current_line += word + ", "
-                        else:
-                            lines.append(current_line.rstrip(", "))
-                            current_line = word + ", "
-                    if current_line:
-                        lines.append(current_line.rstrip(", "))
-                    
-                    # Draw text with multiple lines
-                    y_offset = 0
-                    for line in lines:
-                        ax.text(d_x + 0.5, y_pos + y_offset, line, va='center', 
-                               fontsize=9, color=color, fontweight='bold',
-                               bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
-                        y_offset -= 0.25
-                else:
-                    ax.text(d_x + 0.5, y_pos, detailed_info, va='center', 
-                           fontsize=10, color=color, fontweight='bold',
-                           bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
+        # Add command types as labels next to the destination process
+        command_types = msg.get('command_types', [])
+        payload_info = msg.get('payload_info')
+        
+        if command_types and d_pid in pid_to_process:
+            # Create label with command types - limit to first 3 commands to avoid large labels
+            if len(command_types) > 3:
+                label_text = 'ng-' + ', ng-'.join(command_types[:3]) + '...'
             else:
-                ax.text(d_x + 0.5, y_pos, f"ng -{msg_command}", va='center', 
-                       fontsize=10, color=color, fontweight='bold')
-        elif msg_command in ['response', 'reply', 's', 'scn']:
-            # Label near S_PID axis with detailed info
-            if detailed_info:
-                # Split detailed info into multiple lines if too long
-                if len(detailed_info) > 30:
-                    # Split by comma or space to break into lines
-                    words = detailed_info.split(', ')
-                    lines = []
-                    current_line = ""
-                    for word in words:
-                        if len(current_line + word) < 25:
-                            current_line += word + ", "
-                        else:
-                            lines.append(current_line.rstrip(", "))
-                            current_line = word + ", "
-                    if current_line:
-                        lines.append(current_line.rstrip(", "))
-                    
-                    # Draw text with multiple lines
-                    y_offset = 0
-                    for line in lines:
-                        ax.text(s_x - 0.5, y_pos + y_offset, line, va='center', 
-                               fontsize=9, color=color, fontweight='bold',
-                               bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
-                        y_offset -= 0.25
-                else:
-                    ax.text(s_x - 0.5, y_pos, detailed_info, va='center', 
-                           fontsize=10, color=color, fontweight='bold',
-                           bbox=dict(boxstyle="round,pad=0.3", facecolor='white', alpha=0.8))
-            else:
-                ax.text(s_x - 0.5, y_pos, f"ng -{msg_command}", va='center', 
-                       fontsize=10, color=color, fontweight='bold')
+                label_text = 'ng-' + ', ng-'.join(command_types)
+            
+            dest_process = pid_to_process[d_pid]
+            dest_x = process_x_map[dest_process]
+            
+            # Position label on the appropriate side with consistent justification
+            if start_x < end_x:  # Message goes left to right
+                label_x = dest_x + 0.5
+                ha_alignment = 'left'
+            else:  # Message goes right to left
+                label_x = dest_x - 0.5
+                ha_alignment = 'right'
+            
+            ax.text(label_x, y_pos, label_text, va='center', ha=ha_alignment,
+                   fontsize=8, color=color, fontweight='bold',
+                   bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
+        
+        # If there's a .txt payload, display it on the message line itself
+        if payload_info:
+            # Calculate midpoint of the message line
+            mid_x = (start_x + end_x) / 2
+            # Display payload info on the line
+            ax.text(mid_x, y_pos - 0.1, payload_info, ha='center', va='top', 
+                   fontsize=9, color='red', fontweight='bold',
+                   bbox=dict(boxstyle="round,pad=0.2", facecolor='yellow', alpha=0.9))
     
-    # Add time scale reference with actual time values
-    time_text = f"Time range: {min_time:.3f}s to {max_time:.3f}s"
-    ax.text(6, 0.5, time_text, ha='center', fontsize=10, 
-            bbox=dict(boxstyle="round,pad=0.5", facecolor='yellow', alpha=0.7))
+    # Remove time scale reference as requested
     
     # Format y-axis to show actual time values with discontinuities
     if len(messages_to_plot) > 1 and time_range > 0:
