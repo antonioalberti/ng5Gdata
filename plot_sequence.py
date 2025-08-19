@@ -75,11 +75,18 @@ def parse_records(json_file):
                             label = angle_contents[-1]
                             detailed_info = f"Payload: {label}"
                     elif cmd == 'notify':
-                        # Extract file name from notify command
-                        file_match = re.search(r'<\s*[^>]*?\s*([^ >]+)\s*>', block)
-                        if file_match:
-                            file_name = file_match.group(1)
-                            detailed_info = f"Notify: {file_name}"
+                        # Extract hash from notify command - the first vector in the second < 1 s > block
+                        # Pattern: ng -notify --s 0.1 [ < 1 s 18 > < 1 s HASH > < 4 s ... > ]
+                        hash_match = re.search(r'<\s*1\s+s\s+[^>]*>\s*<\s*1\s+s\s+([0-9A-F]{8})\s*>', block)
+                        if hash_match:
+                            hash_value = hash_match.group(1)
+                            detailed_info = f"Notify hash: {hash_value}"
+                        else:
+                            # Fallback to extracting file name if hash not found
+                            file_match = re.search(r'<\s*[^>]*?\s*([^ >]+)\s*>', block)
+                            if file_match:
+                                file_name = file_match.group(1)
+                                detailed_info = f"Notify: {file_name}"
                     elif cmd == 'p':
                         # Check if it's --notify or --b
                         if '--notify' in block:
@@ -152,7 +159,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                 # Add command type to the list
                 command_types.append(cmd_type)
                 
-                # Check if this is a .txt or .jpg payload
+                # Check if this is a .txt or .jpg payload or notify hash
                 if cmd_type == 'info' and detailed_info:
                     # Extract payload name and check if it's .txt or .jpg
                     payload_match_txt = re.search(r'Payload:\s*([^\s]+\.txt)', detailed_info)
@@ -161,6 +168,11 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                         payload_info = payload_match_txt.group(1)
                     elif payload_match_jpg:
                         payload_info = payload_match_jpg.group(1)
+                elif cmd_type == 'notify' and detailed_info:
+                    # Extract notify hash for display
+                    notify_hash_match = re.search(r'Notify hash:\s*([0-9A-F]{8})', detailed_info)
+                    if notify_hash_match:
+                        payload_info = notify_hash_match.group(1)
             
             # Create a single message entry
             message_data.append({
@@ -384,14 +396,25 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                    fontsize=12, color=color, fontweight='bold',
                    bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
         
-        # If there's a .txt payload, display it on the message line itself
+        # If there's a .txt payload or notify hash, display it on the message line itself
         if payload_info:
             # Calculate midpoint of the message line
             mid_x = (start_x + end_x) / 2
+            
+            # Determine if this is a notify hash or file payload
+            if 'notify' in command_types:
+                # Use cyan color for notify hash instead of yellow
+                box_color = 'cyan'
+                text_color = 'blue'
+            else:
+                # Use yellow for .txt and .jpg files
+                box_color = 'yellow'
+                text_color = 'red'
+            
             # Display payload info on the line
             ax.text(mid_x, y_pos - 0.1, payload_info, ha='center', va='top', 
-                   fontsize=13, color='red', fontweight='bold',
-                   bbox=dict(boxstyle="round,pad=0.2", facecolor='yellow', alpha=0.9))
+                   fontsize=13, color=text_color, fontweight='bold',
+                   bbox=dict(boxstyle="round,pad=0.2", facecolor=box_color, alpha=0.9))
     
     # Remove time scale reference as requested
     

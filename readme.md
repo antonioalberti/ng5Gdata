@@ -7,6 +7,7 @@
   - [analyze_pcap.py](#analyze_pcappy)
   - [filter.py](#filterpy)
   - [plotmessages.py](#plotmessagespy)
+  - [plot_sequence.py](#plot_sequencepy)
   - [plotdata.py](#plotdatapy)
 - [Setup & Dependencies](#setup--dependencies)
 - [File Structure](#file-structure)
@@ -42,7 +43,12 @@ This toolkit provides Python scripts for analyzing and visualizing NovaGenesis m
    python plotmessages.py relevant.json --start-time 4913.24 --end-time 4914.00
    ```
 
-4. **Performance Analysis**  
+4. **Sequence Diagram Generation**  
+   ```bash
+   python plot_sequence.py extracted_data.json --start-time 4913 --end-time 4914 --figsize-width 16 --figsize-height 3
+   ```
+
+5. **Performance Analysis**  
    ```bash
    python plotdata.py
    ```
@@ -89,6 +95,36 @@ python plotmessages.py relevant.json \
 
 **Output**: `plot_d_pid_commands_timeline.pdf`
 
+### plot_sequence.py
+
+**Purpose**: Generate sequence diagrams with accurate time representation and discontinuities
+
+**Features**:
+- Extracts S_PID and D_PID from ng -m command blocks
+- Parses ng -X commands (info, notify, p, scn) for detailed information
+- Accurate Y-axis time representation with discontinuities for large gaps
+- Process mapping (P1, P2, P3, etc.) for better visualization
+- Configurable figure dimensions
+- High-precision time labels (6 decimal places)
+- Color-coded message arrows based on direction
+- Payload information display for .txt and .jpg files
+
+**Parameters**:
+```bash
+json_file         Input JSON file (one message per line)
+--start-time      Start time for filtering (inclusive)
+--end-time        End time for filtering (inclusive)
+--figsize-width   Figure width in inches (default: 16)
+--figsize-height  Figure height in inches (default: 9)
+```
+
+**Example**:
+```bash
+python plot_sequence.py extracted_data.json --start-time 4913 --end-time 4914 --figsize-width 16 --figsize-height 3
+```
+
+**Output**: `extracted_data_sequence_start4913.00_end4914.00.pdf`
+
 ### plotdata.py
 
 **Purpose**: Generate performance graphs
@@ -121,6 +157,7 @@ bash setup_venv.sh
 ├── analyze_pcap.py       # Packet analysis
 ├── filter.py             # Message filtering
 ├── plotmessages.py       # Timeline plotting
+├── plot_sequence.py      # Sequence diagram generation
 ├── plotdata.py           # Performance plotting
 ├── data.csv              # Performance metrics
 ├── ORIGINAL.pcapng       # Network capture
