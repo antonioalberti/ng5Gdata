@@ -131,7 +131,7 @@ def parse_records(json_file):
     return records
 
 
-def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, figsize_width=16, figsize_height=9):
+def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, figsize_width=16, figsize_height=9, y_max_value=9.5):
     """
     Plots a sequence diagram for NovaGenesis messages between S_PID and D_PID.
     """
@@ -240,7 +240,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
     fig, ax = plt.subplots(figsize=(figsize_width, figsize_height))
     
     # Set up the diagram with time flowing from top to bottom
-    ax.set_xlim(0, 12)
+    ax.set_xlim(1, 12)
     
     # Remove X-axis tick labels and values as they are not important
     ax.set_xticks([])
@@ -264,7 +264,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
     
     # Set y-axis limits for visualization (not the actual time values)
     y_min = 0.5
-    y_max = 9.5
+    y_max = y_max_value
     ax.set_ylim(y_min, y_max)
     
     # Create y-axis positions with gaps - map actual time to y positions
@@ -508,11 +508,13 @@ def main():
     parser.add_argument('--end-time', type=float, default=None, help='End time for X-axis (inclusive)')
     parser.add_argument('--figsize-width', type=float, default=16, help='Figure width in inches')
     parser.add_argument('--figsize-height', type=float, default=9, help='Figure height in inches')
+    parser.add_argument('--y-max-value', type=float, default=9.5, help='Maximum Y-axis value')
     args = parser.parse_args()
 
     records = parse_records(args.json_file)
     plot_sequence_diagram(records, args.json_file, start_time=args.start_time, end_time=args.end_time, 
-                         figsize_width=args.figsize_width, figsize_height=args.figsize_height)
+                         figsize_width=args.figsize_width, figsize_height=args.figsize_height,
+                         y_max_value=args.y_max_value)
 
 
 if __name__ == '__main__':
