@@ -69,9 +69,10 @@ def parse_records(json_file):
                     detailed_info = ""
                     
                     # Extract detailed information based on command type
-                    if cmd == 'info':
+                    if cmd == 'd':
                         # Extract file name and hash from ng -d --b command pattern
                         # Pattern: ng -d --b 0.1 [ < 1 s 18 > < 1 s HASH > < 1 s FILENAME > ]
+                        # Only process commands that start with < 1 s 18 >
                         deliver_match = re.search(r'<\s*1\s+s\s+18\s*>\s*<\s*1\s+s\s+([0-9A-F]{8})\s*>\s*<\s*1\s+s\s+([^>]+)\s*>', block)
                         if deliver_match:
                             hash_value = deliver_match.group(1)
@@ -106,6 +107,7 @@ def parse_records(json_file):
                         elif '--b' in block:
                             # Extract file name and hash from ng -d --b command
                             # Pattern: ng -d --b 0.1 [ < 1 s 18 > < 1 s HASH > < 1 s FILENAME > ]
+                            # Only process commands that start with < 1 s 18 >
                             deliver_match = re.search(r'<\s*1\s+s\s+18\s*>\s*<\s*1\s+s\s+([0-9A-F]{8})\s*>\s*<\s*1\s+s\s+([^>]+)\s*>', block)
                             if deliver_match:
                                 hash_value = deliver_match.group(1)
@@ -178,7 +180,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                 command_types.append(cmd_type)
                 
                 # Check if this is a .txt or .jpg payload or notify hash
-                if cmd_type == 'info' and detailed_info:
+                if cmd_type == 'd' and detailed_info:
                     # Extract file name and hash from deliver detailed_info
                     file_match = re.search(r'Deliver:\s*([^\s]+\.txt|[^\s]+\.jpg)\s*\(hash:\s*([0-9A-F]{8})\)', detailed_info)
                     if file_match:
@@ -196,19 +198,6 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                     notify_hash_match = re.search(r'Notify hash:\s*([0-9A-F]{8})', detailed_info)
                     if notify_hash_match:
                         payload_info = notify_hash_match.group(1)
-                elif cmd_type == 'p' and detailed_info:
-                    # Extract file name and hash from deliver detailed_info
-                    file_match = re.search(r'Deliver:\s*([^\s]+\.txt|[^\s]+\.jpg)\s*\(hash:\s*([0-9A-F]{8})\)', detailed_info)
-                    if file_match:
-                        # Both file name and hash found - combine them
-                        file_name = file_match.group(1)
-                        hash_value = file_match.group(2)
-                        payload_info = f"{file_name} {hash_value}"
-                    else:
-                        # Try to extract just file name
-                        file_only_match = re.search(r'Deliver:\s*([^\s]+\.txt|[^\s]+\.jpg)', detailed_info)
-                        if file_only_match:
-                            payload_info = file_only_match.group(1)
             
             # Create a single message entry
             message_data.append({
