@@ -114,6 +114,21 @@ def parse_records(json_file):
                     elif cmd == 'scn':
                         # For scn command, don't show sequence hash as requested
                         detailed_info = "Sequence command"
+                    elif cmd == 's':
+                        # For s command, extract hash from category 18 bindings only
+                        # Pattern: ng -s --b 0.1 [ < 1 s 18 > < 1 s HASH > ]
+                        sign_match = re.search(r'<\s*1\s+s\s+18\s*>\s*<\s*1\s+s\s+([0-9A-F]{8})\s*>', block)
+                        if sign_match:
+                            hash_value = sign_match.group(1)
+                            detailed_info = f"Sign: {hash_value}"
+                        else:
+                            # Check if it's a different category (not 18)
+                            category_match = re.search(r'<\s*1\s+s\s+(\d+)\s*>', block)
+                            if category_match:
+                                category = category_match.group(1)
+                                detailed_info = f"Sign category {category}"
+                            else:
+                                detailed_info = "Sign: (no hash found)"
                     
                     rec_entry = {
                         'time': time,
@@ -200,6 +215,11 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                     notify_hash_match = re.search(r'Notify hash:\s*([0-9A-F]{8})', detailed_info)
                     if notify_hash_match:
                         payload_info = notify_hash_match.group(1)
+                elif cmd_type == 's' and detailed_info:
+                    # Extract sign hash for display (only category 18)
+                    sign_hash_match = re.search(r'Sign:\s*([0-9A-F]{8})', detailed_info)
+                    if sign_hash_match:
+                        payload_info = sign_hash_match.group(1)
             
             # Create a single message entry
             message_data.append({
@@ -375,9 +395,15 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
             start_x = process_x_map[source_process] 
             end_x = process_x_map[dest_process] 
             
-            # All messages are blue and go from S_PID to D_PID
-            color = 'blue'
-            arrow_dir = '->'
+            # Determine message direction and color
+            if start_x < end_x:
+                # Message goes from left to right (S_PID to D_PID)
+                color = 'blue'
+                arrow_dir = '->'
+            else:
+                # Message goes from right to left (D_PID to S_PID)
+                color = 'green'
+                arrow_dir = '->'
         
         # Draw the message line at the correct time position
         ax.plot([start_x, end_x], [y_pos, y_pos], 
@@ -434,12 +460,12 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
             # Determine if this is a notify hash or file payload
             if 'notify' in command_types:
                 # Use cyan color for notify hash instead of yellow
-                box_color = 'cyan'
+                box_color = 'lightcyan'
                 text_color = 'blue'
             else:
                 # Use yellow for .txt and .jpg files
-                box_color = 'yellow'
-                text_color = 'red'
+                box_color = 'lightgreen'
+                text_color = 'green'
             
             # Display payload info on the line
             ax.text(mid_x, y_pos - 0.1, payload_info, ha='center', va='top', 
@@ -519,9 +545,9 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
     legend_elements.append(plt.Line2D([0], [0], color='blue', linewidth=2, label='Destination Actions (ng -*)'))
     
     # Payload types
-    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='cyan', edgecolor='blue', 
-                                       label='File Notification Hash'))
-    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='yellow', edgecolor='red', 
+    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightcyan', edgecolor='blue', 
+                                       label='File Hash'))
+    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightgreen', edgecolor='green', 
                                        label='File Name and its Hash'))
     
     # Command types
