@@ -194,7 +194,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                         # Both file name and hash found - combine them
                         file_name = file_match.group(1)
                         hash_value = file_match.group(2)
-                        payload_info = f"{file_name} {hash_value}"
+                        payload_info = f"{file_name} with hash: {hash_value}"
                     else:
                         # Try to extract just file name
                         file_only_match = re.search(r'Deliver:\s*([^\s]+\.txt|[^\s]+\.jpg)', detailed_info)
@@ -452,18 +452,30 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                        fontsize=12, color=color, fontweight='bold',
                        bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
         
-        # If there's a .txt payload or notify hash, display it on the message line itself
+        # If there's a payload, display it on the message line itself with specific colors for each type
         if payload_info:
             # Calculate midpoint of the message line
             mid_x = (start_x + end_x) / 2
             
-            # Determine if this is a notify hash or file payload
+            # Determine colors based on command type
             if 'notify' in command_types:
-                # Use cyan color for notify hash instead of yellow
+                # ng -notify: cyan background, blue text
                 box_color = 'lightcyan'
                 text_color = 'blue'
+            elif 's' in command_types:
+                # ng -s: light purple background, purple text
+                box_color = 'plum'
+                text_color = 'purple'
+            elif 'd' in command_types:
+                # ng -d: light orange background, orange text
+                box_color = 'moccasin'
+                text_color = 'darkorange'
+            elif 'p' in command_types:
+                # ng -p: light pink background, pink text
+                box_color = 'lightpink'
+                text_color = 'deeppink'
             else:
-                # Use yellow for .txt and .jpg files
+                # Default: light green background, green text
                 box_color = 'lightgreen'
                 text_color = 'green'
             
@@ -541,14 +553,16 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
     # Process lifelines
     legend_elements.append(plt.Line2D([0], [0], color='black', linewidth=2, label='Process Lifeline'))
     
-    # Message arrows
-    legend_elements.append(plt.Line2D([0], [0], color='blue', linewidth=2, label='Destination Actions (ng -*)'))
-    
-    # Payload types
+   
+    # Payload types with specific colors for each command type
     legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightcyan', edgecolor='blue', 
-                                       label='File Hash'))
-    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightgreen', edgecolor='green', 
-                                       label='File Name and its Hash'))
+                                       label='Notify Content Hash (ng -notify)'))
+    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='plum', edgecolor='purple', 
+                                       label='Subscribe Content Hash (ng -s)'))
+    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='moccasin', edgecolor='darkorange', 
+                                       label='File Delivery (ng -d)'))
+    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightpink', edgecolor='deeppink', 
+                                       label='File Publication (ng -p)'))
     
     # Command types
     legend_elements.append(plt.Line2D([0], [0], color='gray', linestyle=':', alpha=0.5, 
