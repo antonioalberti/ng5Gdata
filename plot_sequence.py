@@ -391,23 +391,31 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
         payload_info = msg.get('payload_info')
         
         if command_types:
+            # Filter out 'scn' commands from the label
+            filtered_commands = [cmd for cmd in command_types if cmd != 'scn']
+            
             # Create label with command types - limit to first 3 commands to avoid large labels
-            if len(command_types) > 3:
-                label_text = 'ng-' + ', ng-'.join(command_types[:3]) + '...'
+            if len(filtered_commands) > 3:
+                label_text = 'ng-' + ', ng-'.join(filtered_commands[:3]) + '...'
+            elif len(filtered_commands) > 0:
+                label_text = 'ng-' + ', ng-'.join(filtered_commands)
             else:
-                label_text = 'ng-' + ', ng-'.join(command_types)
+                # If only 'scn' commands were present, don't show any label
+                label_text = None
             
-            # Always position label near the destination (D_PID) which is on the right side
-            # Find the rightmost process for positioning
-            max_x = max(process_x_map.values()) if process_x_map else 10 - 0.2
-            
-            # Position label on the right side
-            label_x = max_x + 0.3
-            ha_alignment = 'left'
-            
-            ax.text(label_x, y_pos, label_text, va='center', ha=ha_alignment,
-                   fontsize=12, color=color, fontweight='bold',
-                   bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
+            # Only display label if there are commands other than 'scn'
+            if label_text:
+                # Always position label near the destination (D_PID) which is on the right side
+                # Find the rightmost process for positioning
+                max_x = max(process_x_map.values()) if process_x_map else 10 - 0.2
+                
+                # Position label on the right side
+                label_x = max_x + 0.3
+                ha_alignment = 'left'
+                
+                ax.text(label_x, y_pos, label_text, va='center', ha=ha_alignment,
+                       fontsize=12, color=color, fontweight='bold',
+                       bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
         
         # If there's a .txt payload or notify hash, display it on the message line itself
         if payload_info:
