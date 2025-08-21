@@ -247,7 +247,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
     ax.set_xticklabels([])
     
     # Add X-axis label
-    ax.set_xlabel('Processes Running (PSS, HTS and APP Server, respectively)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('NovaGenesis Messages Exchanged Between Processes', fontsize=12, fontweight='bold')
     
     # Calculate time gaps between messages to identify discontinuities
     if len(messages_to_plot) > 1:
@@ -338,10 +338,11 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
         x_spacing = (x_end - x_start) / (num_processes - 1)
         x_positions = [x_start + i * x_spacing for i in range(num_processes)]
     
-    # Draw lifelines for each process
+    # Draw lifelines for each process - start them above y_max
     process_x_map = {}
     for i, (process_name, x_pos) in enumerate(zip(pid_to_process.values(), x_positions)):
-        ax.plot([x_pos, x_pos], [y_min, y_max], 'k-', linewidth=2)
+        # Start lifeline above y_max and extend to y_min
+        ax.plot([x_pos, x_pos], [y_max + 0.2, y_min], 'k-', linewidth=2)
         
         # Position process labels at the very top of the plot with more space below
         label_y = y_max + 0.5
@@ -394,11 +395,19 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
             # Filter out 'scn' commands from the label
             filtered_commands = [cmd for cmd in command_types if cmd != 'scn']
             
+            # Remove duplicate commands, keeping only one of each type
+            unique_commands = []
+            seen_commands = set()
+            for cmd in filtered_commands:
+                if cmd not in seen_commands:
+                    unique_commands.append(cmd)
+                    seen_commands.add(cmd)
+            
             # Create label with command types - limit to first 3 commands to avoid large labels
-            if len(filtered_commands) > 3:
-                label_text = 'ng-' + ', ng-'.join(filtered_commands[:3]) + '...'
-            elif len(filtered_commands) > 0:
-                label_text = 'ng-' + ', ng-'.join(filtered_commands)
+            if len(unique_commands) > 3:
+                label_text = 'ng-' + ', ng-'.join(unique_commands[:3]) + '...'
+            elif len(unique_commands) > 0:
+                label_text = 'ng-' + ', ng-'.join(unique_commands)
             else:
                 # If only 'scn' commands were present, don't show any label
                 label_text = None
@@ -413,7 +422,7 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
                 label_x = max_x + 0.3
                 ha_alignment = 'left'
                 
-                ax.text(label_x, y_pos, label_text, va='center', ha=ha_alignment,
+                ax.text(label_x, y_pos - 0.15, label_text, va='top', ha=ha_alignment,
                        fontsize=12, color=color, fontweight='bold',
                        bbox=dict(boxstyle="round,pad=0.2", facecolor='white', alpha=0.8))
         
@@ -519,16 +528,15 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
     legend_elements.append(plt.Line2D([0], [0], color='gray', linestyle=':', alpha=0.5, 
                                    label='Time Discontinuity (⋮)'))
     
-    # Add legend to the plot
+    # Add legend to the plot with larger font size
     ax.legend(handles=legend_elements, loc='lower left', bbox_to_anchor=(0.02, 0.02), 
-             fontsize=10, framealpha=0.9, fancybox=True, shadow=True)
+             fontsize=12, framealpha=0.9, fancybox=True, shadow=True)
     
-    # Add title with additional information
-    #title = f"NovaGenesis Sequence Diagram\n"
-    #title += f"Data: {os.path.basename(json_file)} | "
-    #title += f"Messages: {len(sorted_messages)} | "
-    #title += f"Time Range: {min_time:.3f}s - {max_time:.3f}s"
-    #ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
+    # Add rotated text with smaller box width to force line breaks
+    ax.text(11.7, y_min + 1, 'Actions performed at the destination process', 
+            ha='left', va='top', fontsize=11, fontweight='bold',
+            bbox=dict(boxstyle="round,pad=0.5", facecolor='lightblue', alpha=0.8),
+            rotation=90, rotation_mode='anchor')
     
     # Save the figure
     base_name = os.path.splitext(os.path.basename(json_file))[0]
@@ -563,7 +571,6 @@ def main():
     plot_sequence_diagram(records, args.json_file, start_time=args.start_time, end_time=args.end_time, 
                          figsize_width=args.figsize_width, figsize_height=args.figsize_height,
                          y_max_value=args.y_max_value)
-
 
 if __name__ == '__main__':
     main()
