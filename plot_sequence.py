@@ -246,6 +246,9 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
     ax.set_xticks([])
     ax.set_xticklabels([])
     
+    # Add X-axis label
+    ax.set_xlabel('Processes Running (PSS, HTS and APP Server, respectively)', fontsize=12, fontweight='bold')
+    
     # Calculate time gaps between messages to identify discontinuities
     if len(messages_to_plot) > 1:
         time_gaps = []
@@ -473,14 +476,51 @@ def plot_sequence_diagram(records, json_file, start_time=None, end_time=None, fi
         ax.grid(True, which='minor', linestyle=':', alpha=0.3, color='gray')
         ax.grid(True, which='major', linestyle='-', alpha=0.5, color='gray')
         
+        # Add Y-axis label
+        ax.set_ylabel('Time (seconds)', fontsize=12, fontweight='bold')
+        
     elif len(messages_to_plot) == 1:
         # Single message case - add start and end time boundaries
         ax.set_yticks([y_max, y_positions[0], y_min])
         ax.set_yticklabels([f"{min_time:.6f}", f"{messages_to_plot[0].get('time', 0):.6f}", f"{max_time:.6f}"])
+        # Add Y-axis label
+        ax.set_ylabel('Time (seconds)', fontsize=12, fontweight='bold')
     else:
         # No messages case - show start and end time
         ax.set_yticks([y_max, y_min])
         ax.set_yticklabels([f"{min_time:.6f}", f"{max_time:.6f}"])
+        # Add Y-axis label
+        ax.set_ylabel('Time (seconds)', fontsize=12, fontweight='bold')
+    
+    # Add detailed legend
+    legend_elements = []
+    
+    # Process lifelines
+    legend_elements.append(plt.Line2D([0], [0], color='black', linewidth=2, label='Process Lifeline'))
+    
+    # Message arrows
+    legend_elements.append(plt.Line2D([0], [0], color='blue', linewidth=2, label='Destination Actions (ng -*)'))
+    
+    # Payload types
+    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='cyan', edgecolor='blue', 
+                                       label='File Notification Hash'))
+    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='yellow', edgecolor='red', 
+                                       label='File Name and its Hash'))
+    
+    # Command types
+    legend_elements.append(plt.Line2D([0], [0], color='gray', linestyle=':', alpha=0.5, 
+                                   label='Time Discontinuity (⋮)'))
+    
+    # Add legend to the plot
+    ax.legend(handles=legend_elements, loc='lower left', bbox_to_anchor=(0.02, 0.02), 
+             fontsize=10, framealpha=0.9, fancybox=True, shadow=True)
+    
+    # Add title with additional information
+    #title = f"NovaGenesis Sequence Diagram\n"
+    #title += f"Data: {os.path.basename(json_file)} | "
+    #title += f"Messages: {len(sorted_messages)} | "
+    #title += f"Time Range: {min_time:.3f}s - {max_time:.3f}s"
+    #ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
     
     # Save the figure
     base_name = os.path.splitext(os.path.basename(json_file))[0]
